@@ -49,4 +49,20 @@ async function createAlbum(req, res) {
 
 }
 
-module.exports = { createMusic, createAlbum }
+async function getAllMusics(req, res){
+
+    try {
+        const music = await musicModel.find().populate("artist", "username")
+
+        res.status(200).json({
+            message: "Musics fetched successfully.",
+            musics: music
+        })
+    } catch (err) {
+        console.log(err)
+        return res.status(404).json({message: "Failed to load Music | No data found"})
+    }
+    
+}
+
+module.exports = { createMusic, createAlbum, getAllMusics }
