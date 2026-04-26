@@ -88,7 +88,13 @@ async function getAllAlbums(req, res){
 async function getAlbumById(req, res){
     try{
         const albumId = req.params.albumId;
-        const albums = await albumModel.findById(albumId).populate("artist", "username email");
+        const albums = await albumModel
+            .findById(albumId)
+            .populate("artist", "username email")
+            .populate({
+                path: "musics",
+                populate: { path: "artist", select: "username" }
+            })
 
         if(!albums) {
             return res.status(404).json({message: "Album not found"})
@@ -96,7 +102,7 @@ async function getAlbumById(req, res){
 
         res.status(200).json({
             message: "Album fetched successfully.",
-            musics: albums
+            albums: albums
         })
     } catch (err) {
         console.error("getAlbumById error: ", err);

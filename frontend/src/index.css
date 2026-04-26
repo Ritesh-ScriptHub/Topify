@@ -19,8 +19,8 @@
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  /* margin: 0;
+  padding: 0; */
 }
 
 body {
@@ -49,7 +49,10 @@ body {
 .anim-delay-4 { animation-delay: 0.52s; }
 .anim-delay-5 { animation-delay: 0.68s; }
 
-
+@keyframes bounce {
+  from { transform: scaleY(0.6); }
+  to   { transform: scaleY(1.2); }
+}
 
 
 /* @import "tailwindcss";
