@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "@/context/AuthContext"
 import { PlayerProvider } from "@/context/PlayerContext"
+import AppLayout from "@/components/layout/AppLayout"
 import ProtectedRoute from "@/components/shared/ProtectedRoute"
 
 // Pages
@@ -28,34 +29,34 @@ export default function App() {
             {/* Any authenticated user */}
             <Route path="/home" element={
               <ProtectedRoute>
-                <Home />
+                <AppLayout><Home /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/albums" element={
               <ProtectedRoute>
-                <Albums />
+                <AppLayout><Albums /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/albums/:albumId" element={
               <ProtectedRoute>
-                <AlbumDetail />
+                <AppLayout><AlbumDetail /></AppLayout>
               </ProtectedRoute>
             } />
 
             {/* Artists only */}
             <Route path="/artist" element={
               <ProtectedRoute requiredRole="artist">
-                <ArtistDashboard />
+                <AppLayout><ArtistDashboard /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/artist/upload" element={
               <ProtectedRoute requiredRole="artist">
-                <UploadMusic />
+                <AppLayout><UploadMusic /></AppLayout>
               </ProtectedRoute>
             } />
             <Route path="/artist/create-album" element={
               <ProtectedRoute requiredRole="artist">
-                <CreateAlbum />
+                <AppLayout><CreateAlbum /></AppLayout>
               </ProtectedRoute>
             } />
 
