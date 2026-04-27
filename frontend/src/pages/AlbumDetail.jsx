@@ -165,7 +165,7 @@ export default function AlbumDetail() {
                   borderBottom: i < tracks.length - 1 ? "1px solid var(--border)" : "none",
                 }}
               >
-                <MusicCard track={track} index={i} />
+                <MusicCard track={track} index={i} queue={tracks} />
               </div>
             ))}
           </div>

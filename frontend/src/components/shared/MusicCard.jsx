@@ -1,6 +1,5 @@
 import { usePlayer } from "@/hooks/usePlayer"
 
-// generates a stable warm gradient from a string
 function getGradient(str = "") {
   const hues = [28, 15, 340, 200, 160, 45]
   const idx = str.charCodeAt(0) % hues.length
@@ -8,7 +7,8 @@ function getGradient(str = "") {
   return `linear-gradient(135deg, hsl(${h},60%,72%), hsl(${h + 40},50%,60%))`
 }
 
-export default function MusicCard({ track, index }) {
+// queue: the full list of tracks currently visible — enables prev/next
+export default function MusicCard({ track, index, queue }) {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayer()
 
   const isActive = currentTrack?._id === track._id
@@ -18,7 +18,7 @@ export default function MusicCard({ track, index }) {
     if (isActive) {
       togglePlay()
     } else {
-      playTrack(track)
+      playTrack(track, queue || null)
     }
   }
 
@@ -31,14 +31,10 @@ export default function MusicCard({ track, index }) {
       }}
       onClick={handlePlay}
     >
-      {/* Index / Play toggle */}
+      {/* Index / animated bars / play button */}
       <div className="w-7 flex items-center justify-center shrink-0">
-        <span
-          className="text-sm font-medium group-hover:hidden transition-all"
-          style={{ color: isActive ? "var(--amber)" : "var(--charcoal-muted)" }}
-        >
+        <span className="group-hover:hidden">
           {isThisPlaying ? (
-            // animated bars when playing
             <span className="flex items-end gap-[2px] h-4">
               {[1, 2, 3].map((i) => (
                 <span
@@ -53,11 +49,15 @@ export default function MusicCard({ track, index }) {
               ))}
             </span>
           ) : (
-            index + 1
+            <span
+              className="text-sm font-medium"
+              style={{ color: isActive ? "var(--amber)" : "var(--charcoal-muted)" }}
+            >
+              {index + 1}
+            </span>
           )}
         </span>
 
-        {/* Play/Pause icon on hover */}
         <button
           className="hidden group-hover:flex w-7 h-7 items-center justify-center rounded-full transition-all hover:scale-110"
           style={{ backgroundColor: "var(--charcoal)", color: "var(--cream)" }}
@@ -75,7 +75,7 @@ export default function MusicCard({ track, index }) {
         </button>
       </div>
 
-      {/* Track colour dot */}
+      {/* Gradient dot */}
       <div
         className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-sm"
         style={{ background: getGradient(track.title) }}

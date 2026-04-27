@@ -135,7 +135,7 @@ export default function Home() {
                 borderBottom: i < musics.length - 1 ? "1px solid var(--border)" : "none",
               }}
             >
-              <MusicCard track={track} index={i} />
+              <MusicCard track={track} index={i} queue={musics} />
             </div>
           ))}
         </div>
