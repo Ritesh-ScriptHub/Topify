@@ -35,6 +35,25 @@ async function createAlbum(req, res) {
     try {
         const { title, musicIds } = req.body;
 
+        if (!title || !musicIds || musicIds.length === 0) {
+            return res.status(400).json({ message: "Title and at least one track are required." })
+        }
+
+        const tracks = await musicModel.find({
+            _id: { $in: musicIds },
+        }).select("artist")
+        if (tracks.length !== musicIds.length) {
+            return res.status(400).json({ message: "One or more track IDs are invalid." })
+        }
+        const unauthorised = tracks.some(
+            (t) => t.artist.toString() !== req.user.id
+        )
+        if (unauthorised) {
+            return res.status(403).json({
+                message: "You can only add your own tracks to an album.",
+            })
+        }
+
         const album = await albumModel.create({
             title,
             musics: musicIds,
