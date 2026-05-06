@@ -48,20 +48,24 @@ export default function PlayerBar() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4">
       <div
-        className="max-w-3xl mx-auto rounded-2xl shadow-2xl overflow-hidden"
+        className="max-w-3xl mx-auto rounded-2xl shadow-xl overflow-hidden"
         style={{
-          backgroundColor: "var(--charcoal)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          backgroundColor: "var(--surface)",
+          border: "1px solid var(--border)",
         }}
       >
         {/* ── Main row ── */}
         <div className="flex flex-col px-4 pt-3 pb-3 gap-2">
 
-          {/* Progress bar — inside the row so thumb has space above and below */}
+          {/* ── Progress bar ── */}
           <div className="flex items-center gap-2">
             <span
               className="text-xs tabular-nums shrink-0"
-              style={{ color: "#78716C", fontFamily: "'Outfit', sans-serif", minWidth: "32px" }}
+              style={{
+                color: "var(--charcoal-muted)",
+                fontFamily: "'Outfit', sans-serif",
+                minWidth: "32px",
+              }}
             >
               {formatTime(currentTime)}
             </span>
@@ -70,7 +74,10 @@ export default function PlayerBar() {
               role="slider"
               aria-label="Seek"
               className="flex-1 h-1 cursor-pointer group relative my-2"
-              style={{ backgroundColor: "rgba(255,255,255,0.08)", overflow: "visible" }}
+              style={{
+                backgroundColor: "var(--cream-dark)",
+                overflow: "visible",
+              }}
               onClick={handleProgressClick}
             >
               {/* Filled */}
@@ -92,13 +99,18 @@ export default function PlayerBar() {
 
             <span
               className="text-xs tabular-nums shrink-0"
-              style={{ color: "#44403C", fontFamily: "'Outfit', sans-serif", minWidth: "32px", textAlign: "right" }}
+              style={{
+                color: "var(--charcoal-muted)",
+                fontFamily: "'Outfit', sans-serif",
+                minWidth: "32px",
+                textAlign: "right",
+              }}
             >
               {formatTime(duration)}
             </span>
           </div>
 
-          {/* Track info + controls + volume */}
+          {/* ── Track info + controls + volume ── */}
           <div className="flex items-center gap-3">
 
             {/* Track info */}
@@ -108,12 +120,17 @@ export default function PlayerBar() {
                 style={{
                   background: currentTrack
                     ? getGradient(currentTrack.title)
-                    : "rgba(255,255,255,0.08)",
+                    : "var(--cream-dark)",
                 }}
               >
                 {isLoading ? (
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"
-                    stroke="rgba(255,255,255,0.5)" strokeWidth="2">
+                  <svg
+                    className="animate-spin w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="var(--charcoal-muted)"
+                    strokeWidth="2"
+                  >
                     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                   </svg>
                 ) : "🎵"}
@@ -123,15 +140,20 @@ export default function PlayerBar() {
                 <p
                   className="text-sm font-medium truncate"
                   style={{
-                    color: audioError ? "#FCA5A5" : "var(--cream)",
+                    color: audioError ? "#DC2626" : "var(--charcoal)",
                     fontFamily: "'Outfit', sans-serif",
                   }}
                 >
-                  {audioError ? audioError : currentTrack?.title || "No track playing"}
+                  {audioError
+                    ? audioError
+                    : currentTrack?.title || "No track playing"}
                 </p>
                 <p
                   className="text-xs truncate"
-                  style={{ color: "#78716C", fontFamily: "'Outfit', sans-serif" }}
+                  style={{
+                    color: "var(--charcoal-muted)",
+                    fontFamily: "'Outfit', sans-serif",
+                  }}
                 >
                   {currentTrack
                     ? currentTrack.artist?.username || "Unknown Artist"
@@ -145,8 +167,8 @@ export default function PlayerBar() {
               <button
                 onClick={playPrev}
                 disabled={!hasPrev && !currentTrack}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-all hover:opacity-80 disabled:opacity-25"
-                style={{ color: "#A8A29E" }}
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-all hover:opacity-70 disabled:opacity-25"
+                style={{ color: "var(--charcoal-muted)" }}
                 aria-label="Previous"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -175,8 +197,8 @@ export default function PlayerBar() {
               <button
                 onClick={playNext}
                 disabled={!hasNext}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-all hover:opacity-80 disabled:opacity-25"
-                style={{ color: "#A8A29E" }}
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-all hover:opacity-70 disabled:opacity-25"
+                style={{ color: "var(--charcoal-muted)" }}
                 aria-label="Next"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -185,7 +207,7 @@ export default function PlayerBar() {
               </button>
             </div>
 
-            {/* Volume — hidden on small screens */}
+            {/* Volume */}
             <div className="hidden sm:flex items-center gap-1.5 shrink-0">
               <button
                 onClick={() => setVolume(volume > 0 ? 0 : 0.8)}
@@ -193,11 +215,11 @@ export default function PlayerBar() {
                 aria-label="Toggle mute"
               >
                 {volume === 0 ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#78716C">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--charcoal-muted)">
                     <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z" />
                   </svg>
                 ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#78716C">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--charcoal-muted)">
                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z" />
                   </svg>
                 )}
@@ -207,12 +229,15 @@ export default function PlayerBar() {
                 role="slider"
                 aria-label="Volume"
                 className="w-16 h-1 rounded-full cursor-pointer"
-                style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
+                style={{ backgroundColor: "var(--cream-dark)" }}
                 onClick={handleVolumeClick}
               >
                 <div
                   className="h-full rounded-full"
-                  style={{ width: `${volume * 100}%`, backgroundColor: "var(--amber)" }}
+                  style={{
+                    width: `${volume * 100}%`,
+                    backgroundColor: "var(--amber)",
+                  }}
                 />
               </div>
             </div>
