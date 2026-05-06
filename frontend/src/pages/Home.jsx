@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { getAllMusics } from "@/api/music.api"
 import { useAuth } from "@/hooks/useAuth"
 import MusicCard from "@/components/shared/MusicCard"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+
+const LIMIT = 10
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -27,25 +30,50 @@ function TrackSkeleton() {
 export default function Home() {
   const { user } = useAuth()
   const [musics, setMusics] = useState([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(null)
 
+  // Initial load
   useEffect(() => {
-    async function fetchMusics() {
+    async function fetchInitial() {
       try {
-        const data = await getAllMusics()
+        const data = await getAllMusics(1, LIMIT)
         setMusics(data.musics || [])
+        setHasMore(data.pagination?.hasMore || false)
+        setTotal(data.pagination?.total || 0)
+        setPage(1)
       } catch (err) {
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
-    fetchMusics()
+    fetchInitial()
   }, [])
 
+  // Load more 
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const data = await getAllMusics(nextPage, LIMIT)
+      setMusics((prev) => [...prev, ...(data.musics || [])])
+      setHasMore(data.pagination?.hasMore || false)
+      setPage(nextPage)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [loadingMore, hasMore, page])
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
+    <div className="max-w-3xl mx-auto" style={{ padding: "2.5rem 1.5rem" }}>
 
       {/* Header */}
       <div className="mb-10 anim-fade-up anim-delay-1">
@@ -69,7 +97,7 @@ export default function Home() {
           >
             All Tracks
           </h2>
-          {!loading && !error && (
+          {!loading && !error && total > 0 && (
             <span
               className="text-xs px-3 py-1 rounded-full"
               style={{
@@ -77,28 +105,28 @@ export default function Home() {
                 color: "var(--charcoal-muted)",
               }}
             >
-              {musics.length} {musics.length === 1 ? "track" : "tracks"}
+              {musics.length} of {total}
             </span>
           )}
         </div>
 
-        {/* Divider */}
+        {/* Track container */}
         <div
-          className="grid gap-0 rounded-2xl overflow-hidden"
+          className="rounded-2xl overflow-hidden"
           style={{ border: "1px solid var(--border)" }}
         >
-          {loading && (
-            Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                style={{ borderBottom: i < 4 ? "1px solid var(--border)" : "none" }}
-              >
-                <TrackSkeleton />
-              </div>
-            ))
-          )}
+          {/* Initial loading skeletons */}
+          {loading && Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              style={{ borderBottom: i < 4 ? "1px solid var(--border)" : "none" }}
+            >
+              <TrackSkeleton />
+            </div>
+          ))}
 
-          {error && (
+          {/* Error */}
+          {error && !loading && (
             <div className="px-6 py-12 text-center">
               <p className="text-2xl mb-2">😕</p>
               <p
@@ -113,6 +141,7 @@ export default function Home() {
             </div>
           )}
 
+          {/* Empty state */}
           {!loading && !error && musics.length === 0 && (
             <div className="px-6 py-12 text-center">
               <p className="text-2xl mb-2">🎵</p>
@@ -128,17 +157,60 @@ export default function Home() {
             </div>
           )}
 
+          {/* Track rows */}
           {!loading && !error && musics.map((track, i) => (
             <div
               key={track._id}
               style={{
-                borderBottom: i < musics.length - 1 ? "1px solid var(--border)" : "none",
+                borderBottom: i < musics.length - 1 || hasMore
+                  ? "1px solid var(--border)"
+                  : "none",
               }}
             >
               <MusicCard track={track} index={i} queue={musics} />
             </div>
           ))}
+
+          {/* Load more skeletons */}
+          {loadingMore && Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={`more-${i}`}
+              style={{ borderBottom: i < 2 ? "1px solid var(--border)" : "none" }}
+            >
+              <TrackSkeleton />
+            </div>
+          ))}
         </div>
+
+        {/* Load More button — outside the card container */}
+        {!loading && !error && hasMore && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              variant="outline"
+              className="rounded-full px-8 text-sm transition-all hover:scale-[1.02]"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--charcoal)",
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >
+              {loadingMore ? "Loading…" : `Load more tracks`}
+            </Button>
+          </div>
+        )}
+
+        {/* End of list indicator */}
+        {!loading && !error && !hasMore && musics.length > 0 && (
+          <p
+            className="text-xs text-center mt-5"
+            style={{ color: "var(--charcoal-muted)" }}
+          >
+            You've heard it all — {total} {total === 1 ? "track" : "tracks"} total
+          </p>
+        )}
+
       </section>
     </div>
   )

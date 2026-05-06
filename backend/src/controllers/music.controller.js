@@ -78,12 +78,31 @@ async function createAlbum(req, res) {
 async function getAllMusics(req, res){
 
     try {
-        const music = await musicModel.find().populate("artist", "username")
+        const page  = parseInt(req.query.page)  || 1
+        const limit = parseInt(req.query.limit) || 10
+        const skip  = (page - 1) * limit
+
+        const [musics, total] = await Promise.all([
+        musicModel
+            .find()
+            .skip(skip)
+            .limit(limit)
+            .populate("artist", "username"),
+        musicModel.countDocuments(),
+        ])
 
         res.status(200).json({
-            message: "Musics fetched successfully.",
-            musics: music
+        message: "Musics fetched successfully.",
+        musics,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+            hasMore: page * limit < total,
+        },
         })
+
     } catch (err) {
         console.error("getAllMusics error: ", err);
         res.status(500).json({ message: "Internal Server Error ", error: err.message})
