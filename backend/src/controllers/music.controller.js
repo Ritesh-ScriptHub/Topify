@@ -1,5 +1,6 @@
 const musicModel = require("../models/music.model");
 const albumModel = require("../models/album.model");
+const userModel = require("../models/user.model");
 const { uploadFiles } = require("../services/storage.service");
 
 
@@ -148,4 +149,34 @@ async function getAlbumById(req, res){
     }
 }
 
-module.exports = { createMusic, createAlbum, getAllMusics, getAllAlbums, getAlbumById }
+async function getArtistProfile(req, res) {
+    try{
+        const {username} = req.params;
+
+        const artist = await userModel.findOne({username, role:"artist"}).select("Username email role createdAt");
+        if(!artist){
+            return res.status(404).json({message: "Artist not found"})
+        }
+        const [tracks, albums] = await Promise.all([
+            musicModel
+                .find({ artist: artist._id })
+                .populate("artist", "username")
+                .sort({ createdAt: -1 }),
+            albumModel
+                .find({ artist: artist._id })
+                .populate("artist", "username")
+                .sort({ createdAt: -1 }),
+        ])  
+        res.status(200).json({
+            message: "Artist profile fetched successfully.",
+            artist,
+            tracks,
+            albums,
+        })
+    } catch (err) {
+        console.error("getArtistProfile error: ", err);
+        res.status(500).json({message: "Internal Server Error"})
+    }
+}
+
+module.exports = { createMusic, createAlbum, getAllMusics, getAllAlbums, getAlbumById, getArtistProfile }
