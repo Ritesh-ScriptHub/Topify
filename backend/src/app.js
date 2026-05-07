@@ -8,14 +8,18 @@ const rateLimit = require("express-rate-limit")
 const app = express();
 
 // CORS
+function normalizeOrigin(origin) {
+  return origin ? origin.trim().replace(/\/$/, "") : origin;
+}
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  ? process.env.ALLOWED_ORIGINS.split(",").map(normalizeOrigin)
   : ["http://localhost:5173"]
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
+    if (allowedOrigins.includes(normalizeOrigin(origin))) return callback(null, true)
     callback(new Error(`CORS: origin ${origin} not allowed`))
   },
   credentials: true,
