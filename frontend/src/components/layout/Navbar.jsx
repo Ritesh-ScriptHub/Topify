@@ -112,6 +112,8 @@ export default function Navbar() {
           </span>
 
           <Link
+            to="/search"
+            aria-label="Search"
             className="w-9 h-9 flex items-center justify-center rounded-full transition-all hover:opacity-75"
             style={{
               backgroundColor: isActive("/search") ? "var(--amber-pale)" : "var(--cream-dark)",

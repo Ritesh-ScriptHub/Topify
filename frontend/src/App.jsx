@@ -15,6 +15,7 @@ import ArtistDashboard from "@/pages/ArtistDashboard"
 import ArtistProfile from "@/pages/ArtistProfile"
 import UploadMusic from "@/pages/UploadMusic"
 import CreateAlbum from "@/pages/CreateAlbum"
+import Search from "@/pages/Search"
 
 export default function App() {
   return (
@@ -63,6 +64,11 @@ export default function App() {
             <Route path="/artist/create-album" element={
               <ProtectedRoute requiredRole="artist">
                 <AppLayout><CreateAlbum /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/search" element={
+              <ProtectedRoute>
+                <AppLayout><Search /></AppLayout>
               </ProtectedRoute>
             } />
 

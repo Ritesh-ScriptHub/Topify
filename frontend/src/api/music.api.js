@@ -23,3 +23,6 @@ export const createAlbum = (body) =>
     method: "POST",
     body: JSON.stringify(body),
   })
+
+export const searchAll = (q) =>
+  request(`/music/search?q=${encodeURIComponent(q)}`)
