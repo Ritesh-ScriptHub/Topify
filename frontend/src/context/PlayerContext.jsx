@@ -169,6 +169,19 @@ export function PlayerProvider({ children }) {
       .catch(() => setIsPlaying(false))
   }, [queue, queueIndex, seek])
 
+  const stopTrack = useCallback(() => {
+  const audio = audioRef.current
+  audio.pause()
+  audio.src = ""
+  setCurrentTrack(null)
+  setIsPlaying(false)
+  setCurrentTime(0)
+  setDuration(0)
+  setQueue([])
+  setQueueIndex(-1)
+  setAudioError(null)
+  }, [])
+
   return (
     <PlayerContext.Provider value={{
       currentTrack,
@@ -186,6 +199,7 @@ export function PlayerProvider({ children }) {
       playPrev,
       hasNext: queue.length > 0 && queueIndex < queue.length - 1,
       hasPrev: queue.length > 0 && queueIndex > 0,
+      stopTrack,
     }}>
       {children}
     </PlayerContext.Provider>

@@ -11,6 +11,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { usePlayer } from "@/hooks/usePlayer"
 
 const USER_NAV = [
   { label: "Home", to: "/home" },
@@ -31,7 +32,10 @@ export default function Navbar() {
 
   const navLinks = isArtist ? ARTIST_NAV : USER_NAV
 
+  const { stopTrack } = usePlayer()
+
   const handleLogout = async () => {
+    stopTrack()
     await logout()
     navigate("/", { replace: true })
   }
