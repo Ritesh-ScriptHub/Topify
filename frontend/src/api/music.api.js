@@ -9,7 +9,9 @@ export const getAllAlbums = () =>
 export const getAlbumById = (albumId) =>
   request(`/music/albums/${albumId}`)
 
-// file upload — body is FormData, not JSON
+export const getArtistProfile = (username) =>
+  request(`/music/artist/${username}`)
+
 export const uploadMusic = (formData) =>
   request("/music/upload", {
     method: "POST",

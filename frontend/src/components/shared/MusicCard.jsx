@@ -1,4 +1,5 @@
 import { usePlayer } from "@/hooks/usePlayer"
+import { Link } from "react-router-dom"
 
 function getGradient(str = "") {
   const hues = [28, 15, 340, 200, 160, 45]
@@ -94,11 +95,16 @@ export default function MusicCard({ track, index, queue }) {
         >
           {track.title}
         </p>
-        <p
-          className="text-xs truncate mt-0.5"
-          style={{ color: "var(--charcoal-muted)" }}
-        >
-          {track.artist?.username || "Unknown Artist"}
+        
+        <p className="text-xs truncate mt-0.5">
+          <Link
+            to={`/artist/${track.artist?.username}`}
+            className="hover:underline underline-offset-4 transition-opacity hover:opacity-70"
+            style={{ color: "var(--charcoal-muted)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {track.artist?.username || "Unknown Artist"}
+          </Link>
         </p>
       </div>
     </div>

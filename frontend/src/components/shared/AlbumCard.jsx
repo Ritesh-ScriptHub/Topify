@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate  } from "react-router-dom"
 
 function getGradient(str = "") {
   const pairs = [
@@ -13,6 +13,8 @@ function getGradient(str = "") {
 }
 
 export default function AlbumCard({ album }) {
+  const navigate = useNavigate()
+  
   return (
     <Link to={`/albums/${album._id}`} className="group block">
       <div
@@ -39,8 +41,15 @@ export default function AlbumCard({ album }) {
             {album.title}
           </p>
           <p
-            className="text-xs truncate"
+            className="text-xs truncate cursor-pointer hover:underline underline-offset-4 hover:opacity-70 transition-opacity"
             style={{ color: "var(--charcoal-muted)" }}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (album.artist?.username) {
+                navigate(`/artist/${album.artist.username}`)
+              }
+            }}
           >
             {album.artist?.username || "Unknown Artist"}
           </p>

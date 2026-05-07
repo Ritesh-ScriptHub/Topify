@@ -12,6 +12,7 @@ import Home from "@/pages/Home"
 import Albums from "@/pages/Albums"
 import AlbumDetail from "@/pages/AlbumDetail"
 import ArtistDashboard from "@/pages/ArtistDashboard"
+import ArtistProfile from "@/pages/ArtistProfile"
 import UploadMusic from "@/pages/UploadMusic"
 import CreateAlbum from "@/pages/CreateAlbum"
 
@@ -40,6 +41,11 @@ export default function App() {
             <Route path="/albums/:albumId" element={
               <ProtectedRoute>
                 <AppLayout><AlbumDetail /></AppLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/artist/:username" element={
+              <ProtectedRoute>
+                <AppLayout><ArtistProfile /></AppLayout>
               </ProtectedRoute>
             } />
 
