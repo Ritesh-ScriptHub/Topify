@@ -179,4 +179,36 @@ async function getArtistProfile(req, res) {
     }
 }
 
-module.exports = { createMusic, createAlbum, getAllMusics, getAllAlbums, getAlbumById, getArtistProfile }
+async function searchAll(req, res){
+    try {
+        const q = (req.query.q || "").trim()
+
+        if (q.length < 2) {
+            return res.status(200).json({ tracks: [], albums: [], artists: [] })
+        }
+
+        const regex = new RegExp(q, "i")
+
+        const [tracks, albums, artists] = await Promise.all([
+            musicModel
+                .find({ title: regex })
+                .populate("artist", "username")
+                .limit(20),
+            albumModel
+                .find({ title: regex })
+                .populate("artist", "username")
+                .limit(20),
+            userModel
+                .find({ username: regex, role: "artist" })
+                .select("username email role")
+                .limit(20),
+        ])
+
+        res.status(200).json({ tracks, albums, artists })
+    } catch (err) {
+        console.error("searchAll error:", err)
+        res.status(500).json({ message: "Search failed." })
+    }
+}
+
+module.exports = { createMusic, createAlbum, getAllMusics, getAllAlbums, getAlbumById, getArtistProfile, searchAll }
