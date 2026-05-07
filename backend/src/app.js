@@ -44,6 +44,13 @@ const apiLimiter = rateLimit({
 app.use(express.json());
 app.use(cookieParser());
 
+// TEMPORARY — for debugging only
+app.get("/debug-env", (req, res) => {
+  res.json({
+    allowedOrigins: process.env.ALLOWED_ORIGINS || "NOT SET",
+    nodeEnv: process.env.NODE_ENV || "NOT SET",
+  })
+})
 
 app.use("/api/auth", authRoutes);
 
