@@ -2,13 +2,21 @@ const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-function cookieOptions() {
+function buildCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
+
   return {
     httpOnly: true,
-    // sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   }
+}
+
+function buildClearCookieOptions() {
+  const { maxAge, ...cookieOptions } = buildCookieOptions();
+  return cookieOptions;
 }
 
 async function registerUser(req, res) {
@@ -44,7 +52,7 @@ async function registerUser(req, res) {
         {expiresIn: "1d"}
         )
 
-        res.cookie("token", token, cookieOptions())
+        res.cookie("token", token, buildCookieOptions())
 
         res.status(201).json({
             message: "user registered successfully",
@@ -89,7 +97,7 @@ async function loginUser(req, res) {
             role: user.role
         }, process.env.JWT_SECRET)
 
-        res.cookie("token", token, cookieOptions());
+        res.cookie("token", token, buildCookieOptions());
 
         res.status(200).json({
             user: {
@@ -107,7 +115,7 @@ async function loginUser(req, res) {
 }
 
 async function logoutUser(req, res){
-    res.clearCookie("token")
+    res.clearCookie("token", buildClearCookieOptions())
     return res.status(200).json({message: "You logged out successfully"})
 }
 
