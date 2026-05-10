@@ -6,8 +6,6 @@ import ProtectedRoute from "@/components/shared/ProtectedRoute"
 
 // Pages
 import Landing from "@/pages/Landing"
-import Login from "@/pages/Login"
-import Register from "@/pages/Register"
 import Home from "@/pages/Home"
 import Albums from "@/pages/Albums"
 import AlbumDetail from "@/pages/AlbumDetail"
@@ -16,6 +14,7 @@ import ArtistProfile from "@/pages/ArtistProfile"
 import UploadMusic from "@/pages/UploadMusic"
 import CreateAlbum from "@/pages/CreateAlbum"
 import Search from "@/pages/Search"
+import LoginSignup from "@/pages/auth/LoginSignup"
 
 export default function App() {
   return (
@@ -25,8 +24,8 @@ export default function App() {
           <Routes>
             {/* Public */}
             <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<LoginSignup />} />
+            <Route path="/register" element={<Navigate to="/login" replace />} />
 
             {/* Any authenticated user */}
             <Route path="/home" element={
