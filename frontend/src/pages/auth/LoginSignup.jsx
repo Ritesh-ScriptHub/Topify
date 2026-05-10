@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { authStyles } from "./authStyles";
+import { authStyles } from "./AuthStyles";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 
