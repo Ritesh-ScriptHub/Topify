@@ -2,7 +2,7 @@
 
 A full-stack music streaming platform where artists upload and manage their music, and listeners discover and stream tracks and albums. Built as an intermediate-level MERN project with a clean editorial design and real audio playback.
 
-**Live Demo:** [topify-orpin.vercel.app](https://topify-orpin.vercel.app)  
+**Live Demo:** [topify-orpin.vercel.app](https://topify-orpin.vercel.app)
 
 ---
 
@@ -11,12 +11,9 @@ A full-stack music streaming platform where artists upload and manage their musi
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
 - [API Reference](#api-reference)
 - [Deployment](#deployment)
 - [Known Limitations](#known-limitations)
-- [Roadmap](#roadmap)
 
 ---
 
