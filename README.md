@@ -186,4 +186,4 @@ All routes are prefixed with `/api`. Protected routes require a valid `token` co
 
 ## License
 
-MIT © 2025 Topify
+MIT © 2026 Topify
