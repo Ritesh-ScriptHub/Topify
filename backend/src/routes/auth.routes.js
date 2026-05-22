@@ -9,4 +9,8 @@ router.post('/login',authController.loginUser)
 
 router.post('/logout', authController.logoutUser)
 
+router.post('/verify-email', authController.verifyEmail)
+
+router.post('/resend-verification', authController.resendVerification)
+
 module.exports = router;

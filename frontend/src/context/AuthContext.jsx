@@ -46,8 +46,12 @@ export function AuthProvider({ children }) {
     setError(null)
     try {
       const data = await registerUser(credentials)
-      setUser(data.user)
-      return { success: true, role: data.user.role }
+      // setUser(data.user)
+      return { 
+        success: true,
+        requiresVeification: data.requiresVerification || false,
+        email: data.email
+      }
     } catch (err) {
       setError(err.message)
       return { success: false, message: err.message }

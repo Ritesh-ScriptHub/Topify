@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { resendVerification } from "@/api/auth.api"
 
 // SVG Icons 
 
@@ -27,6 +28,10 @@ export default function LoginForm({ toggle, formVisible, mode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null)
+  const [resendSent, setResendSent] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+
   // Redirect back to whatever page the user was trying to reach before login.
   const from = location.state?.from?.pathname || null;
 
@@ -52,8 +57,24 @@ export default function LoginForm({ toggle, formVisible, mode }) {
       navigate(destination, { replace: true });
     } else {
       setError(result.message);
+
+      if(result.requiresVerification){
+        setUnverifiedEmail(form.email)
+      }
     }
   };
+
+  const handleResend = async () => {
+    setResendLoading(true)
+    try {
+      await resendVerification(unverifiedEmail)
+      setResendSent(true)
+    } catch {
+      setResendSent(true)
+    } finally {
+      setResendLoading(false)
+    }
+  }
 
   const formClass = [
     "auth-form",
@@ -99,6 +120,35 @@ export default function LoginForm({ toggle, formVisible, mode }) {
           </div>
 
           {error && <div className="auth-error">{error}</div>}
+          
+          {unverifiedEmail && !resendSent && (
+            <div style={{ marginBottom: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendLoading}
+                style={{
+                  width: "100%", padding: "0.65rem",
+                  background: "#fdf8f1", border: "1.5px solid #ede0cc",
+                  borderRadius: "0.65rem", fontSize: "0.82rem",
+                  color: "#8a7860", cursor: "pointer",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                {resendLoading ? "Sending…" : "📬 Resend verification email"}
+              </button>
+            </div>
+          )}
+
+        {resendSent && (
+          <div style={{
+            background: "#f0fdf4", color: "#16a34a",
+            border: "1px solid #bbf7d0", borderRadius: "0.65rem",
+            padding: "0.65rem 1rem", fontSize: "0.82rem", marginBottom: "0.75rem"
+          }}>
+            ✅ Verification email resent — check your inbox.
+          </div>
+        )}
 
           <button type="submit" className="auth-btn" disabled={loading}>
             {loading ? "Signing in…" : "Sign In"}

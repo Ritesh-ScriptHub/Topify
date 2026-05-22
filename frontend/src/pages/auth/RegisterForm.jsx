@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { resendVerification } from "@/api/auth.api";
 
 // SVG Icons
 
@@ -27,6 +28,11 @@ export default function RegisterForm({ toggle, formVisible, mode }) {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [emailSent, setEmailSent] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState("")
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
 
   // Pre-select "artist" role if the user arrived via an "I'm an Artist" CTA
   // that passed { state: { role: "artist" } } through the Link/navigate call.
@@ -62,16 +68,87 @@ export default function RegisterForm({ toggle, formVisible, mode }) {
     const result = await register(form);
 
     if (result.success) {
-      navigate(result.role === "artist" ? "/artist" : "/home", { replace: true });
+      // navigate(result.role === "artist" ? "/artist" : "/home", { replace: true });
+      setRegisteredEmail(form.email)
+      setEmailSent(true)
     } else {
       setError(result.message);
     }
   };
 
+  const handleResend = async () => {
+    setResendLoading(true)
+    try {
+      await resendVerification(registeredEmail)
+      setResendSent(true)
+    } catch {
+      setResendSent(true)
+    } finally {
+      setResendLoading(false)
+    }
+  }
+
   const formClass = [
     "auth-form",
     mode === "sign-up" && formVisible ? "visible" : "",
   ].join(" ");
+
+  // ── Email sent state ──
+  if (emailSent) {
+    return (
+      <div className="form-wrapper">
+        <div
+          className={formClass}
+          style={{ transitionDelay: mode === "sign-up" ? "0.85s" : "0s", textAlign: "center" }}
+        >
+          <div className="form-logo" style={{ justifyContent: "center" }}>
+            <div className="form-logo-mark">T</div>
+            <span className="form-logo-text">Topify</span>
+          </div>
+
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>📬</div>
+
+          <h2 className="form-heading" style={{ textAlign: "center" }}>
+            Check your inbox
+          </h2>
+          <p className="form-subheading" style={{ textAlign: "center", marginBottom: "1.25rem" }}>
+            We sent a verification link to<br />
+            <strong style={{ color: "#1a1005" }}>{registeredEmail}</strong>
+          </p>
+
+          <p style={{ fontSize: "0.8rem", color: "#8a7860", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+            Click the link in the email to activate your account. It expires in 24 hours.
+          </p>
+
+          {resendSent ? (
+            <p style={{
+              fontSize: "0.82rem", color: "#16a34a",
+              background: "#f0fdf4", borderRadius: "0.65rem",
+              padding: "0.65rem 1rem", marginBottom: "1rem"
+            }}>
+              ✅ New link sent — check your inbox.
+            </p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={resendLoading}
+              className="auth-btn"
+              style={{ background: "#1a1005", boxShadow: "none" }}
+            >
+              {resendLoading ? "Sending…" : "Resend verification email"}
+            </button>
+          )}
+
+          <div className="form-footer">
+            Wrong email?{" "}
+            <b onClick={() => { setEmailSent(false); setForm({ username: "", email: "", password: "", role: "user" }) }}>
+              Start over
+            </b>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="form-wrapper">

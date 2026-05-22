@@ -16,3 +16,16 @@ export const logoutUser = () =>
   request("/auth/logout", {
     method: "POST",
   })
+
+export const verifyEmail = (token) => 
+  request("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token })
+  })
+
+export const resendVerification = (email) => {
+  request("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({email})
+  })
+}
