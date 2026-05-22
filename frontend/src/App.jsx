@@ -15,6 +15,7 @@ import UploadMusic from "@/pages/UploadMusic"
 import CreateAlbum from "@/pages/CreateAlbum"
 import Search from "@/pages/Search"
 import LoginSignup from "@/pages/auth/LoginSignup"
+import VerifyEmail from "./pages/VerifyEmail"
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<LoginSignup />} />
             <Route path="/register" element={<Navigate to="/login" replace />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
 
             {/* Any authenticated user */}
             <Route path="/home" element={
