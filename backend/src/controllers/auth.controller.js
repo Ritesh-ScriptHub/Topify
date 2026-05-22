@@ -175,9 +175,41 @@ async function verifyEmail(req, res){
     }
 }
 
+async function resendVerification(req, res) {
+    try {
+        const { email } = req.body
+
+        if (!email) {
+        return res.status(400).json({ message: "Email is required." })
+        }
+
+        const user = await userModel.findOne({ email })
+
+        if (!user || user.isVerified) {
+        return res.status(200).json({ message: "If that email exists and is unverified, a new link has been sent."})
+        }
+
+        const verificationToken = crypto.randomBytes(32).toString("hex")
+        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+        user.verificationToken = verificationToken
+        user.verificationTokenExpiry = verificationTokenExpiry
+        await user.save()
+
+        await sendVerificationEmail(email, verificationToken)
+
+        res.status(200).json({
+        message: "If that email exists and is unverified, a new link has been sent.",
+        })
+
+    }catch(error) {
+        console.error( "resend Verification error:" ,error)
+        res.status(500).json({message: "Internal Server Error"})
+    }
+}
 async function logoutUser(req, res){
     res.clearCookie("token", buildClearCookieOptions())
     return res.status(200).json({message: "You logged out successfully"})
 }
 
-module.exports = {registerUser, loginUser, verifyEmail, logoutUser}
+module.exports = {registerUser, loginUser, verifyEmail, resendVerification, logoutUser}

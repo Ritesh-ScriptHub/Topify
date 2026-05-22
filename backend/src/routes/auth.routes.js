@@ -11,4 +11,6 @@ router.post('/logout', authController.logoutUser)
 
 router.get('/verify-email', authController.verifyEmail)
 
+router.post('/resend-verification', authController.resendVerification)
+
 module.exports = router;
