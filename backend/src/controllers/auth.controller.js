@@ -1,6 +1,8 @@
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto")
+const { sendVerificationEmail } = require("../services/email.service")
 
 function buildCookieOptions() {
   const isProduction = process.env.NODE_ENV === "production";
@@ -38,32 +40,50 @@ async function registerUser(req, res) {
 
         const passHash = await bcrypt.hash(password, 10);
 
+        const verificationToken = crypto.randomBytes(32).toString("hex");
+        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
         const user = await userModel.create({
             username,
             email,
             password: passHash,
-            role
+            role,
+            isverified: false,
+            verificationToken,
+            verificationTokenExpiry
         })
 
-        const token = jwt.sign({
-            id: user._id,
-            role: user.role
-        }, process.env.JWT_SECRET,
-        {expiresIn: "1d"}
-        )
-
-        res.cookie("token", token, buildCookieOptions())
+        try {
+            await sendVerificationEmail(email, verificationToken)
+        } catch (err) {
+            console.err("Failed to send Verification email", err.message)
+        }
 
         res.status(201).json({
-            message: "user registered successfully",
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            }
+            message: "Please check your email to verify",
+            requiresVerification: true,
+            email: user.email,
         })
+
+        // const token = jwt.sign({
+        //     id: user._id,
+        //     role: user.role
+        // }, process.env.JWT_SECRET,
+        // {expiresIn: "1d"}
+        // )
+
+        // res.cookie("token", token, buildCookieOptions())
+
+        // res.status(201).json({
+        //     message: "user registered successfully",
+        //     token,
+        //     user: {
+        //         id: user._id,
+        //         username: user.username,
+        //         email: user.email,
+        //         role: user.role
+        //     }
+        // })
     } catch (error) {
         console.error("Registration error:", error);
         res.status(500).json({message: "Internal server error", error: error.message});
@@ -92,10 +112,20 @@ async function loginUser(req, res) {
             return res.status(401).json({message:"Credential failed"})
         }
 
+        if(!user.isverified) {
+            return res.status(403).json({
+                message: "Please verify your email before logging in!",
+                requiresVerification: true,
+                email: user.email
+            })
+        }
+
         const token = await jwt.sign({
             id: user._id,
             role: user.role
-        }, process.env.JWT_SECRET)
+            }, process.env.JWT_SECRET,
+            {expiresIn: "7d"}
+        )
 
         res.cookie("token", token, buildCookieOptions());
 
@@ -114,9 +144,40 @@ async function loginUser(req, res) {
 
 }
 
+async function verifyEmail(req, res){
+    try{
+        const {token} = req.query;
+        if(!token){
+            return res.status(400).json({message: "Verification token is required"})
+        }
+
+        const user = await userModel.findOne({
+            verificationToken: token,
+            verificationTokenExpiry: {$gt: new Date()}
+        }) 
+
+        if(!user) {
+            return res.status(400).json({
+                messsage: "This verification link is invalid or has expired."
+            })
+        }
+
+        user.isverified = true
+        user.verificationToken = null
+        user.verificationTokenExpiry = null
+        await user.save()
+
+        res.status(200).json({message: "Email verified successfully"})
+
+    } catch (err) {
+        console.error("VerifyEmail error: ", error)
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
 async function logoutUser(req, res){
     res.clearCookie("token", buildClearCookieOptions())
     return res.status(200).json({message: "You logged out successfully"})
 }
 
-module.exports = {registerUser, loginUser, logoutUser}
+module.exports = {registerUser, loginUser, verifyEmail, logoutUser}

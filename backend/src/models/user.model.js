@@ -23,6 +23,21 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["user", "artist"],
         default: 'user'
+    },
+
+    isverified: {
+        type: Boolean,
+        default: false
+    },
+
+    verificationToken:{
+        type: String,
+        default: null
+    },
+
+    verificationTokenExpiry: {
+        type: Date,
+        default: null
     }
 })
 

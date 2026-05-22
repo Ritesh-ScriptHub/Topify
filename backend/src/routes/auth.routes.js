@@ -9,4 +9,6 @@ router.post('/login',authController.loginUser)
 
 router.post('/logout', authController.logoutUser)
 
+router.get('/verify-email', authController.verifyEmail)
+
 module.exports = router;
