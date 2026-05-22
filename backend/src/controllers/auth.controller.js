@@ -146,7 +146,7 @@ async function loginUser(req, res) {
 
 async function verifyEmail(req, res){
     try{
-        const {token} = req.query;
+        const {token} = req.body;
         if(!token){
             return res.status(400).json({message: "Verification token is required"})
         }
@@ -158,7 +158,8 @@ async function verifyEmail(req, res){
 
         if(!user) {
             return res.status(400).json({
-                messsage: "This verification link is invalid or has expired."
+                messsage: "This verification link is invalid or has expired.",
+                expired: true
             })
         }
 

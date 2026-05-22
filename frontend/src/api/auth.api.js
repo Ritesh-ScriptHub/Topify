@@ -18,7 +18,10 @@ export const logoutUser = () =>
   })
 
 export const verifyEmail = (token) => 
-  request(`/auth/verify-email?token=${token}`)
+  request("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token })
+  })
 
 export const resendVerification = (email) => {
   request("/auth/resend-verification", {

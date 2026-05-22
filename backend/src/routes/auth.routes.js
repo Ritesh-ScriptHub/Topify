@@ -9,7 +9,7 @@ router.post('/login',authController.loginUser)
 
 router.post('/logout', authController.logoutUser)
 
-router.get('/verify-email', authController.verifyEmail)
+router.post('/verify-email', authController.verifyEmail)
 
 router.post('/resend-verification', authController.resendVerification)
 

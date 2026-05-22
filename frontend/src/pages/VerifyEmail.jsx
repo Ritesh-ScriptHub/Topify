@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { verifyEmail, resendVerification } from "@/api/auth.api"
 
@@ -7,44 +7,34 @@ export default function VerifyEmail() {
   const navigate = useNavigate()
   const token = searchParams.get("token")
 
-  const [status, setStatus] = useState("loading") // loading | success | error | expired
+  const [status, setStatus] = useState(token ? "idle" : "error")
+  const [verifyLoading, setVerifyLoading] = useState(false)
   const [resendEmail, setResendEmail] = useState("")
   const [resendSent, setResendSent] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [countdown, setCountdown] = useState(5)
 
-  useEffect(() => {
-    if (!token) {
-      setStatus("error")
-      return
-    }
-
-    async function verify() {
-      try {
-        await verifyEmail(token)
-        setStatus("success")
-      } catch (err) {
-        setStatus(err.message?.includes("expired") ? "expired" : "error")
-      }
-    }
-    verify()
-  }, [token])
-
-  // Auto-redirect to login after success
-  useEffect(() => {
-    if (status !== "success") return
-    const interval = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
+  // Called when user clicks the verify button — NOT on mount
+  const handleVerify = async () => {
+    setVerifyLoading(true)
+    try {
+      await verifyEmail(token)
+      setStatus("success")
+      let c = 5
+      const interval = setInterval(() => {
+        c -= 1
+        setCountdown(c)
+        if (c <= 0) {
           clearInterval(interval)
           navigate("/login", { state: { verified: true } })
-          return 0
         }
-        return c - 1
-      })
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [status, navigate])
+      }, 1000)
+    } catch (err) {
+      setStatus(err.message?.includes("expired") ? "expired" : "error")
+    } finally {
+      setVerifyLoading(false)
+    }
+  }
 
   const handleResend = async (e) => {
     e.preventDefault()
@@ -53,12 +43,36 @@ export default function VerifyEmail() {
     try {
       await resendVerification(resendEmail)
       setResendSent(true)
-    } catch (err) {
-      setResendSent(true) // show generic message regardless
+    } catch {
+      setResendSent(true)
     } finally {
       setResendLoading(false)
     }
   }
+
+  const card = {
+    background: "#fff",
+    borderRadius: "1.75rem",
+    padding: "2.5rem 2rem",
+    maxWidth: "420px",
+    width: "100%",
+    textAlign: "center",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+  }
+
+  const btn = (bg = "linear-gradient(135deg,#EF9F27,#BA7517)") => ({
+    padding: "0.75rem 2rem",
+    background: bg,
+    color: "#fff",
+    border: "none",
+    borderRadius: "0.65rem",
+    fontFamily: "'Outfit',sans-serif",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    cursor: "pointer",
+    width: "100%",
+    marginTop: "0.25rem",
+  })
 
   return (
     <div style={{
@@ -68,19 +82,11 @@ export default function VerifyEmail() {
       alignItems: "center",
       justifyContent: "center",
       padding: "2rem",
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'DM Sans',sans-serif",
     }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=DM+Sans:wght@400;500&display=swap');`}</style>
 
-      <div style={{
-        background: "#fff",
-        borderRadius: "1.75rem",
-        padding: "2.5rem 2rem",
-        maxWidth: "420px",
-        width: "100%",
-        textAlign: "center",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-      }}>
+      <div style={card}>
 
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", marginBottom: "1.75rem" }}>
@@ -98,16 +104,23 @@ export default function VerifyEmail() {
           </span>
         </div>
 
-        {/* ── Loading ── */}
-        {status === "loading" && (
+        {/* ── Idle — show verify button ── */}
+        {status === "idle" && (
           <>
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⏳</div>
-            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.4rem", fontWeight: 700, color: "#1a1005", marginBottom: "0.5rem" }}>
-              Verifying your email
+            <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>✉️</div>
+            <h2 style={{ fontFamily:"'Outfit',sans-serif", fontSize:"1.4rem", fontWeight:700, color:"#1a1005", marginBottom:"0.5rem" }}>
+              Verify your email
             </h2>
-            <p style={{ fontSize: "0.875rem", color: "#8a7860" }}>
-              Just a moment…
+            <p style={{ fontSize:"0.875rem", color:"#8a7860", marginBottom:"1.5rem", lineHeight:1.6 }}>
+              Click the button below to confirm your email address and activate your Topify account.
             </p>
+            <button
+              onClick={handleVerify}
+              disabled={verifyLoading}
+              style={btn()}
+            >
+              {verifyLoading ? "Verifying…" : "Verify My Account"}
+            </button>
           </>
         )}
 
@@ -123,20 +136,10 @@ export default function VerifyEmail() {
               <strong style={{ color: "#EF9F27" }}>{countdown}s</strong>…
             </p>
             <button
-              onClick={() => navigate("/login", { state: { verified: true } })}
-              style={{
-                padding: "0.75rem 2rem",
-                background: "linear-gradient(135deg, #EF9F27, #BA7517)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "0.65rem",
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                cursor: "pointer",
-              }}
+              onClick={() => navigate("/login", { state:{ verified:true } })}
+              style={btn()}
             >
-              Go to Login
+              Go to Login →
             </button>
           </>
         )}
@@ -149,7 +152,7 @@ export default function VerifyEmail() {
               Link expired
             </h2>
             <p style={{ fontSize: "0.875rem", color: "#8a7860", marginBottom: "1.5rem", lineHeight: 1.6 }}>
-              Verification links expire after 24 hours. Enter your email to get a new one.
+              Verification links expire after 24 hours. Enter your email for a new one.
             </p>
 
             {resendSent ? (
@@ -209,20 +212,7 @@ export default function VerifyEmail() {
             <p style={{ fontSize: "0.875rem", color: "#8a7860", marginBottom: "1.5rem", lineHeight: 1.6 }}>
               This verification link is invalid. Make sure you copied the full URL from your email.
             </p>
-            <button
-              onClick={() => navigate("/login")}
-              style={{
-                padding: "0.75rem 2rem",
-                background: "#1a1005",
-                color: "#fff",
-                border: "none",
-                borderRadius: "0.65rem",
-                fontFamily: "'Outfit', sans-serif",
-                fontWeight: 600,
-                fontSize: "0.95rem",
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={() => navigate("/login")} style={btn("#1a1005")}>
               Back to Login
             </button>
           </>
