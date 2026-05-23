@@ -82,7 +82,7 @@ export default function Landing() {
 
         {/* Left: copy */}
         <div>
-          <div
+          {/* <div
             className="anim-fade-up anim-delay-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-8"
             style={{
               backgroundColor: "var(--amber-pale)",
@@ -91,7 +91,7 @@ export default function Landing() {
             }}
           >
             🎧 Music for every mood
-          </div>
+          </div> */}
 
           <h1
             className="anim-fade-up anim-delay-2 font-display text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight mb-6"
@@ -206,7 +206,7 @@ export default function Landing() {
             <div className="flex items-center justify-between">
               <span className="text-xs" style={{ color: "var(--charcoal-muted)" }}>1:24</span>
               <button
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-black text-sm"
                 style={{ backgroundColor: "var(--charcoal)" }}
               >
                 ▶
@@ -216,7 +216,7 @@ export default function Landing() {
           </div>
 
           {/* Floating badge */}
-          <div
+          {/* <div
             className="absolute top-6 right-4 lg:right-0 rounded-xl px-4 py-2 text-sm font-medium shadow-lg"
             style={{
               backgroundColor: "var(--charcoal)",
@@ -224,7 +224,7 @@ export default function Landing() {
             }}
           >
             🔥 Trending Now
-          </div>
+          </div> */}
         </div>
       </section>
 
