@@ -56,7 +56,7 @@ async function registerUser(req, res) {
         try {
             await sendVerificationEmail(email, verificationToken)
         } catch (err) {
-            console.err("Failed to send Verification email", err.message)
+            console.error("Failed to send verification email:", err.message)
         }
 
         res.status(201).json({
@@ -65,25 +65,6 @@ async function registerUser(req, res) {
             email: user.email,
         })
 
-        // const token = jwt.sign({
-        //     id: user._id,
-        //     role: user.role
-        // }, process.env.JWT_SECRET,
-        // {expiresIn: "1d"}
-        // )
-
-        // res.cookie("token", token, buildCookieOptions())
-
-        // res.status(201).json({
-        //     message: "user registered successfully",
-        //     token,
-        //     user: {
-        //         id: user._id,
-        //         username: user.username,
-        //         email: user.email,
-        //         role: user.role
-        //     }
-        // })
     } catch (error) {
         console.error("Registration error:", error);
         res.status(500).json({message: "Internal server error", error: error.message});
@@ -170,8 +151,8 @@ async function verifyEmail(req, res){
 
         res.status(200).json({message: "Email verified successfully"})
 
-    } catch (err) {
-        console.error("VerifyEmail error: ", error)
+    } catch (error) {
+        console.error("VerifyEmail error:", error)
         res.status(500).json({message: "Internal Server Error"});
     }
 }
@@ -186,7 +167,7 @@ async function resendVerification(req, res) {
 
         const user = await userModel.findOne({ email })
 
-        if (!user || user.isVerified) {
+        if (!user || user.isverified) {
         return res.status(200).json({ message: "If that email exists and is unverified, a new link has been sent."})
         }
 

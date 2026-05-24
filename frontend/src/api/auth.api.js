@@ -24,7 +24,7 @@ export const verifyEmail = (token) =>
   })
 
 export const resendVerification = (email) => {
-  request("/auth/resend-verification", {
+  return request("/auth/resend-verification", {
     method: "POST",
     body: JSON.stringify({email})
   })
