@@ -445,7 +445,12 @@
   border-radius: 24px;
   background: rgba(17, 24, 39, 0.8);
   backdrop-filter: blur(30px);
+  transition: all 0.3s;
+}
+
+.player-card:hover{
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 159, 28, 0.1);
+  transform: translateY(-2px) scale(1.03);
 }
 
 .player-card__art {
@@ -513,7 +518,7 @@
   height: 40px;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 6px;
 }
 
 .player-waveform__bar {
