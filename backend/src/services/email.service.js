@@ -1,41 +1,24 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend")
 
-function normalizeUrl(url) {
-  return url ? url.trim().replace(/\/+$/, "") : "";
-}
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 function getFrontendUrl() {
-  const configuredUrl = process.env.FRONTEND_URL;
-
-  if (configuredUrl) {
-    return normalizeUrl(configuredUrl);
-  }
-
-  const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(normalizeUrl).filter(Boolean)
-    : [];
-
-  return allowedOrigins[0] || "http://localhost:5173";
+  const url = process.env.FRONTEND_URL ||
+    (process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(",")[0].trim()
+      : null)
+  return url ? url.trim().replace(/\/+$/, "") : "http://localhost:5173"
 }
 
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
-
 async function sendVerificationEmail(to, token) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error("Email credentials are missing. Set EMAIL_USER and EMAIL_PASS.");
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is not set.")
   }
 
-  const verifyUrl = `${getFrontendUrl()}/verify-email?token=${token}`;
+  const verifyUrl = `${getFrontendUrl()}/verify-email?token=${token}`
 
-  await transporter.sendMail({
-    from: `"Topify" <${process.env.EMAIL_USER}>`,
+  const { error } = await resend.emails.send({
+    from: "Topify <noreply@mail.riteshxtech.me>",
     to,
     subject: "Verify your Topify account",
     html: `
@@ -54,9 +37,10 @@ async function sendVerificationEmail(to, token) {
                   <td style="background:linear-gradient(135deg,#EF9F27,#BA7517);padding:36px 40px;text-align:center;">
                     <div style="display:inline-flex;align-items:center;gap:10px;">
                       <div style="width:36px;height:36px;background:rgba(255,255,255,0.25);border-radius:9px;display:inline-flex;align-items:center;justify-content:center;">
-                        <span style="font-size:18px;font-weight:800;color:#fff;font-family:Georgia,serif;"> 
-                          <img src="https://lh3.googleusercontent.com/d/1JKx24SHoTGXeSdZsjpWbeoNk8Y6yk4mb" alt="logo" />
-                        </span>
+                        <img 
+                            style="width:36px;height:36px"
+                            src="https://lh3.googleusercontent.com/d/1JKx24SHoTGXeSdZsjpWbeoNk8Y6yk4mb" alt="logo" 
+                        />
                       </div>
                       <span style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;">Topify</span>
                     </div>
@@ -102,7 +86,11 @@ async function sendVerificationEmail(to, token) {
       </body>
       </html>
     `,
-  });
+  })
+
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 module.exports = { sendVerificationEmail }
