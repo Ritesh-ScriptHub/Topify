@@ -1,189 +1,210 @@
-# Topify 🎵
+# <img src="https://lh3.googleusercontent.com/d/1JKx24SHoTGXeSdZsjpWbeoNk8Y6yk4mb" height="60" alt="Topify Logo" valign="middle"> Topify 
 
-A full-stack music streaming platform where artists upload and manage their music, and listeners discover and stream tracks and albums. Built as an intermediate-level MERN project with a clean editorial design and real audio playback.
+A full-stack music streaming platform where artists can upload tracks, create albums, and manage their music, while listeners can discover, search, and stream music through a responsive web player.
 
-**Live Demo:** [topify-orpin.vercel.app](https://topify-orpin.vercel.app)
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [API Reference](#api-reference)
-- [Deployment](#deployment)
-- [Known Limitations](#known-limitations)
-
----
+**Live Demo:** [topify-orpin.vercel.app](https://topify-orpin.vercel.app)  
+**Repository:** [Ritesh-ScriptHub/Topify](https://github.com/Ritesh-ScriptHub/Topify)
 
 ## Features
 
-### Listeners
-- Browse and stream all tracks from every artist on the platform
-- Explore full album experiences
-- Search for tracks, albums, and artists
-- Persistent audio player with queue, seek, prev/next, and volume control
-- Visit artist profile pages
+### For listeners
+- Browse paginated tracks from every artist
+- Explore albums and album detail pages
+- Search tracks, albums, and artists
+- Stream music with a persistent player, queue controls, seeking, and volume
+- Visit public artist profile pages
 
-### Artists
-- Upload audio tracks (mp3, wav, flac, aac) via drag-and-drop
-- Create albums from your own uploaded tracks
-- View your personal studio dashboard with track and album counts
+### For artists
+- Register as an artist and verify the account by email
+- Upload audio files with ImageKit-backed storage
+- Create albums from owned uploaded tracks
+- Access an artist dashboard with personal track and album stats
 
-### General
-- JWT-based authentication with secure `httpOnly` cookies
-- Role-based access control (listener vs artist)
-- Dark / light mode toggle with zero flash on reload
-- Fully responsive — works on mobile, tablet, and desktop
-
----
+### Platform
+- JWT authentication with secure `httpOnly` cookies
+- Email verification and resend-verification flow powered by Resend
+- Role-based route protection for listeners and artists
+- Responsive React UI with dark/light theme support
+- Express rate limiting and CORS configuration for deployment
 
 ## Tech Stack
 
+### Frontend
+| Area | Technology |
+|---|---|
+| Framework | React 19 + Vite |
+| Routing | React Router 7 |
+| Styling | Tailwind CSS 4 |
+| UI | shadcn/ui, Radix UI, lucide-react |
+| State | React Context API |
+| API Client | Native `fetch` with credentials |
+
 ### Backend
-| | |
+| Area | Technology |
 |---|---|
 | Runtime | Node.js |
-| Framework | Express.js |
+| Framework | Express 5 |
 | Database | MongoDB + Mongoose |
 | Authentication | JWT + bcryptjs |
+| Email | Resend |
+| File Upload | Multer memory storage |
 | File Storage | ImageKit |
-| File Upload | Multer (memory storage) |
-| Security | cors, express-rate-limit |
-
-### Frontend
-| | |
-|---|---|
-| Framework | React 18 (Vite) |
-| Routing | React Router v6 |
-| UI Library | shadcn/ui |
-| Styling | Tailwind CSS v4 |
-| State | Context API (AuthContext, PlayerContext) |
-| HTTP | Native fetch API |
-| Fonts | Fraunces (display) + Outfit (UI) |
-
----
+| Security | CORS, cookie-parser, express-rate-limit |
 
 ## Project Structure
 
-```
-topify/
+```text
+Topify/
 ├── backend/
-│   ├── db/
-│   │   └── db.js
-│   ├── controllers/
-│   │   ├── auth.controller.js
-│   │   └── music.controller.js
-│   ├── middleware/
-│   │   └── auth.middleware.js
-│   ├── models/
-│   │   ├── user.model.js
-│   │   ├── music.model.js
-│   │   └── album.model.js
-│   ├── routes/
-│   │   ├── auth.routes.js
-│   │   └── music.routes.js
-│   ├── services/
-│   │   └── storage.service.js
-│   ├── app.js
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── auth.controller.js
+│   │   │   └── music.controller.js
+│   │   ├── db/
+│   │   │   └── db.js
+│   │   ├── middleware/
+│   │   │   └── auth.middleware.js
+│   │   ├── models/
+│   │   │   ├── album.model.js
+│   │   │   ├── music.model.js
+│   │   │   └── user.model.js
+│   │   ├── routes/
+│   │   │   ├── auth.routes.js
+│   │   │   └── music.routes.js
+│   │   ├── services/
+│   │   │   ├── email.service.js
+│   │   │   └── storage.service.js
+│   │   └── app.js
+│   ├── package.json
 │   └── server.js
-│
 └── frontend/
     ├── src/
     │   ├── api/
-    │   │   ├── base.js
-    │   │   ├── auth.api.js
-    │   │   └── music.api.js
     │   ├── components/
-    │   │   ├── layout/
-    │   │   │   ├── AppLayout.jsx
-    │   │   │   ├── Navbar.jsx
-    │   │   │   └── PlayerBar.jsx
-    │   │   ├── shared/
-    │   │   │   ├── MusicCard.jsx
-    │   │   │   ├── AlbumCard.jsx
-    │   │   │   ├── ArtistCard.jsx
-    │   │   │   └── ProtectedRoute.jsx
-    │   │   └── ui/               # shadcn auto-generated
     │   ├── context/
-    │   │   ├── AuthContext.jsx
-    │   │   └── PlayerContext.jsx
     │   ├── hooks/
-    │   │   ├── useAuth.js
-    │   │   ├── usePlayer.js
-    │   │   └── useTheme.js
+    │   ├── lib/
     │   ├── pages/
-    │   │   ├── auth/
-    │   │   │   ├── LoginForm.jsx
-    │   │   │   ├── RegisterForm.jsx
-    │   │   │   ├── LoginSignup.jsx
-    │   │   │   └── AuthStyles.jsx
-    │   │   ├── Landing.jsx
-    │   │   ├── Home.jsx
-    │   │   ├── Albums.jsx
-    │   │   ├── AlbumDetail.jsx
-    │   │   ├── Search.jsx
-    │   │   ├── ArtistProfile.jsx
-    │   │   ├── ArtistDashboard.jsx
-    │   │   ├── UploadMusic.jsx
-    │   │   └── CreateAlbum.jsx
     │   ├── App.jsx
-    │   ├── main.jsx
-    │   └── index.css
-    └── index.html
+    │   └── main.jsx
+    ├── package.json
+    └── vite.config.js
 ```
 
----
+## Getting Started
+
+### Prerequisites
+- Node.js 18 or newer
+- MongoDB database
+- ImageKit account
+- Resend account and verified sender/domain
+
+### Backend setup
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Create `backend/.env`:
+
+```env
+PORT=3000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+NODE_ENV=development
+ALLOWED_ORIGINS=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+RESEND_API_KEY=your_resend_api_key
+```
+
+### Frontend setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+The frontend runs on `http://localhost:5173` by default and expects the backend API at `http://localhost:3000/api`.
 
 ## API Reference
 
-All routes are prefixed with `/api`. Protected routes require a valid `token` cookie set at login.
+All routes are prefixed with `/api`. Protected routes require the `token` cookie created during login.
 
 ### Auth
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | `/auth/register` | Public | Register a new user or artist |
-| POST | `/auth/login` | Public | Login and receive session cookie |
-| POST | `/auth/logout` | Public | Clear session cookie |
+| `POST` | `/auth/register` | Public | Register a listener or artist and send a verification email |
+| `POST` | `/auth/login` | Public | Login after email verification and set the session cookie |
+| `POST` | `/auth/logout` | Public | Clear the session cookie |
+| `POST` | `/auth/verify-email` | Public | Verify an account with an email token |
+| `POST` | `/auth/resend-verification` | Public | Send a new verification email for an unverified account |
 
 ### Music
 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/music` | Listener + Artist | Paginated track list (`?page=1&limit=10`) |
-| POST | `/music/upload` | Artist only | Upload a new track (multipart/form-data) |
-| POST | `/music/album` | Artist only | Create a new album |
-| GET | `/music/albums` | Listener + Artist | All albums |
-| GET | `/music/albums/:albumId` | Listener + Artist | Single album with populated tracks |
-| GET | `/music/artist/:username` | Listener + Artist | Artist public profile with tracks and albums |
-| GET | `/music/search?q=query` | Listener + Artist | Search tracks, albums, and artists |
+| `GET` | `/music?page=1&limit=10` | Authenticated | Fetch paginated tracks |
+| `POST` | `/music/upload` | Artist | Upload a track with multipart field `music` |
+| `POST` | `/music/album` | Artist | Create an album from the artist's own tracks |
+| `GET` | `/music/albums` | Authenticated | Fetch all albums |
+| `GET` | `/music/albums/:albumId` | Authenticated | Fetch one album with populated tracks |
+| `GET` | `/music/artist/:username` | Authenticated | Fetch artist profile, tracks, and albums |
+| `GET` | `/music/search?q=query` | Authenticated | Search tracks, albums, and artists |
 
-### Rate Limits
+## Frontend Routes
 
-| Route group | Limit |
-|---|---|
-| `/api/auth/*` | 20 requests / 15 min per IP |
-| `/api/music/*` | 200 requests / 15 min per IP |
-
----
+| Route | Access | Page |
+|---|---|---|
+| `/` | Public | Landing page |
+| `/login` | Public | Login and registration |
+| `/verify-email` | Public | Email verification result |
+| `/home` | Authenticated | Music home feed |
+| `/albums` | Authenticated | Album listing |
+| `/albums/:albumId` | Authenticated | Album detail |
+| `/artist/:username` | Authenticated | Public artist profile |
+| `/search` | Authenticated | Search page |
+| `/artist` | Artist | Artist dashboard |
+| `/artist/upload` | Artist | Upload music |
+| `/artist/create-album` | Artist | Create album |
 
 ## Deployment
 
-### Backend → Render
-### Frontend → Vercel
+### Backend on Render
+- Set the backend root directory to `backend`
+- Use `npm install` as the build command
+- Use `node server.js` as the start command
+- Add production environment variables, including `NODE_ENV=production`
+- Set `ALLOWED_ORIGINS` and `FRONTEND_URL` to the deployed Vercel URL
+
+### Frontend on Vercel
+- Set the frontend root directory to `frontend`
+- Add `VITE_API_URL` with the deployed backend API URL ending in `/api`
+- Keep `vercel.json` rewrites enabled so React Router routes load correctly
+
+## Rate Limits
+
+| Route group | Limit |
+|---|---|
+| `/api/auth/*` | 20 requests per 15 minutes per IP |
+| `/api/music/*` | 200 requests per 15 minutes per IP |
 
 ## Known Limitations
 
-- **Render free tier cold starts** — The backend spins down after 15 minutes of inactivity. First request after sleep takes ~30 seconds. Upgrade to Render Starter ($7/mo) to eliminate this.
-- **No audio waveform** — The player shows a static progress bar rather than a real waveform visualisation.
-- **Follow feature is UI-only** — The Follow button on artist profiles toggles state locally but has no backend persistence yet.
-- **No pagination on albums** — Albums page loads all albums in one request. Fine at current scale, needs pagination when the catalogue grows.
-- **Storage is ImageKit** — Suitable for development and small scale. Migration path to AWS S3 or Cloudinary is isolated to `storage.service.js`.
-
----
+- The backend may have cold starts on Render's free tier.
+- Albums are currently fetched without pagination.
+- The player uses a standard progress bar instead of an audio waveform.
+- Storage is configured for ImageKit and can be swapped through `storage.service.js`.
 
 ## License
-
 MIT © 2026 Topify
