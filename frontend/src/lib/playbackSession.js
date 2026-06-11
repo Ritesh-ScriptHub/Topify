@@ -1,23 +1,10 @@
-/**
- * Playback Session Persistence
- *
- * Saves / restores the player state per-user in localStorage.
- * Key format: `topify_session_<userId>`
- *
- * Stored shape:
- *   { track, queue, queueIndex, currentTime, savedAt }
- */
-
 const PREFIX = "topify_session_"
 
 function keyFor(userId) {
   return `${PREFIX}${userId}`
 }
 
-/**
- * Persist the current playback session for a user.
- */
-export function saveSession(userId, { currentTrack, queue, queueIndex, currentTime }) {
+export function saveSession(userId, { currentTrack, queue, queueIndex, currentTime, isShuffle, shuffledQueue, shuffledQueueIndex }) {
   if (!userId || !currentTrack) return
   try {
     const payload = {
@@ -25,6 +12,9 @@ export function saveSession(userId, { currentTrack, queue, queueIndex, currentTi
       queue,
       queueIndex,
       currentTime,
+      isShuffle,
+      shuffledQueue,
+      shuffledQueueIndex,
       savedAt: Date.now(),
     }
     localStorage.setItem(keyFor(userId), JSON.stringify(payload))
@@ -33,10 +23,6 @@ export function saveSession(userId, { currentTrack, queue, queueIndex, currentTi
   }
 }
 
-/**
- * Load the saved playback session for a user.
- * Returns `null` if nothing is stored or the data is corrupt.
- */
 export function loadSession(userId) {
   if (!userId) return null
   try {
@@ -44,7 +30,7 @@ export function loadSession(userId) {
     const raw = localStorage.getItem(key)
     if (!raw) return null
     const data = JSON.parse(raw)
-    // basic shape validation
+
     if (!data.track || typeof data.currentTime !== "number") return null
     return data
   } catch {
@@ -52,9 +38,7 @@ export function loadSession(userId) {
   }
 }
 
-/**
- * Remove a user's saved session (e.g. when they finish a full playlist).
- */
+
 export function clearSession(userId) {
   if (!userId) return
   try {

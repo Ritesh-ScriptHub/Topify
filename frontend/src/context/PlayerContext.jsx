@@ -4,6 +4,15 @@ import { saveSession, loadSession } from "@/lib/playbackSession"
 
 export const PlayerContext = createContext(null)
 
+function shuffleArray(array) {
+  const arr = [...array]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
 export function PlayerProvider({ children }) {
   const { user } = useAuth()
   const userId = user?._id || user?.id || null
@@ -18,6 +27,9 @@ export function PlayerProvider({ children }) {
   const [currentTrack, setCurrentTrack] = useState(null)
   const [queue, setQueue] = useState([])
   const [queueIndex, setQueueIndex] = useState(-1)
+  const [isShuffle, setIsShuffle] = useState(false)
+  const [shuffledQueue, setShuffledQueue] = useState([])
+  const [shuffledQueueIndex, setShuffledQueueIndex] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -28,10 +40,10 @@ export function PlayerProvider({ children }) {
   // Ref for the save-throttle timer so it survives re-renders
   const saveTimerRef = useRef(null)
   // Keep latest state in refs so event listeners always read fresh values
-  const stateRef = useRef({ currentTrack: null, queue: [], queueIndex: -1, currentTime: 0 })
+  const stateRef = useRef({ currentTrack: null, queue: [], queueIndex: -1, currentTime: 0, isShuffle: false, shuffledQueue: [], shuffledQueueIndex: -1 })
   useEffect(() => {
-    stateRef.current = { currentTrack, queue, queueIndex, currentTime }
-  }, [currentTrack, queue, queueIndex, currentTime])
+    stateRef.current = { currentTrack, queue, queueIndex, currentTime, isShuffle, shuffledQueue, shuffledQueueIndex }
+  }, [currentTrack, queue, queueIndex, currentTime, isShuffle, shuffledQueue, shuffledQueueIndex])
 
   // ── Static event listeners (no deps) ──────────────────────────────────
   useEffect(() => {
@@ -63,16 +75,25 @@ export function PlayerProvider({ children }) {
     }
   }, [])
 
-  // ── "ended" listener — needs fresh queue/queueIndex ───────────────────
+  // ── "ended" listener — needs fresh queue/queueIndex/shuffle info ──────
   useEffect(() => {
     const audio = audioRef.current
 
     const onEnded = () => {
-      const nextIdx = queueIndex + 1
-      if (queue.length > 0 && nextIdx < queue.length) {
+      const activeQueue = isShuffle ? shuffledQueue : queue
+      const activeIdx = isShuffle ? shuffledQueueIndex : queueIndex
+      const nextIdx = activeIdx + 1
+
+      if (activeQueue.length > 0 && nextIdx < activeQueue.length) {
         // auto-advance
-        const next = queue[nextIdx]
-        setQueueIndex(nextIdx)
+        const next = activeQueue[nextIdx]
+        if (isShuffle) {
+          setShuffledQueueIndex(nextIdx)
+          const origIdx = queue.findIndex((t) => t._id === next._id)
+          setQueueIndex(origIdx)
+        } else {
+          setQueueIndex(nextIdx)
+        }
         setCurrentTrack(next)
         setCurrentTime(0)
         setDuration(0)
@@ -91,7 +112,7 @@ export function PlayerProvider({ children }) {
 
     audio.addEventListener("ended", onEnded)
     return () => audio.removeEventListener("ended", onEnded)
-  }, [queue, queueIndex])
+  }, [queue, queueIndex, isShuffle, shuffledQueue, shuffledQueueIndex])
 
   // ── Save session (throttled + beforeunload + visibilitychange) ─────────
   useEffect(() => {
@@ -165,6 +186,9 @@ export function PlayerProvider({ children }) {
     setCurrentTrack(saved.track)
     setQueue(saved.queue || [])
     setQueueIndex(typeof saved.queueIndex === "number" ? saved.queueIndex : -1)
+    setIsShuffle(!!saved.isShuffle)
+    setShuffledQueue(saved.shuffledQueue || [])
+    setShuffledQueueIndex(typeof saved.shuffledQueueIndex === "number" ? saved.shuffledQueueIndex : -1)
     setAudioError(null)
     setIsLoading(true)
 
@@ -200,11 +224,24 @@ export function PlayerProvider({ children }) {
 
     if (trackQueue) {
       setQueue(trackQueue)
-      setQueueIndex(trackQueue.findIndex((t) => t._id === track._id))
+      const origIdx = trackQueue.findIndex((t) => t._id === track._id)
+      setQueueIndex(origIdx)
+
+      if (isShuffle) {
+        const remaining = trackQueue.filter((t) => t._id !== track._id)
+        const shuffledRemaining = shuffleArray(remaining)
+        setShuffledQueue([track, ...shuffledRemaining])
+        setShuffledQueueIndex(0)
+      } else {
+        setShuffledQueue([])
+        setShuffledQueueIndex(-1)
+      }
     } else {
       // single play — no queue context
       setQueue([])
       setQueueIndex(-1)
+      setShuffledQueue([])
+      setShuffledQueueIndex(-1)
     }
 
     audio.src = track.uri
@@ -212,7 +249,7 @@ export function PlayerProvider({ children }) {
     audio.play()
       .then(() => setIsPlaying(true))
       .catch(() => setIsPlaying(false))
-  }, [cancelPendingRestore])
+  }, [cancelPendingRestore, isShuffle])
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current
@@ -238,12 +275,48 @@ export function PlayerProvider({ children }) {
     setVolumeState(vol)
   }, [])
 
+  const toggleShuffle = useCallback(() => {
+    setIsShuffle((prev) => {
+      const newShuffle = !prev
+      if (newShuffle) {
+        if (queue.length > 0 && currentTrack) {
+          const remaining = queue.filter((t) => t._id !== currentTrack._id)
+          const shuffledRemaining = shuffleArray(remaining)
+          const newShuffledQueue = [currentTrack, ...shuffledRemaining]
+          setShuffledQueue(newShuffledQueue)
+          setShuffledQueueIndex(0)
+        } else {
+          setShuffledQueue([])
+          setShuffledQueueIndex(-1)
+        }
+      } else {
+        if (queue.length > 0 && currentTrack) {
+          const originalIdx = queue.findIndex((t) => t._id === currentTrack._id)
+          setQueueIndex(originalIdx >= 0 ? originalIdx : -1)
+        }
+        setShuffledQueue([])
+        setShuffledQueueIndex(-1)
+      }
+      return newShuffle
+    })
+  }, [queue, currentTrack])
+
   const playNext = useCallback(() => {
     cancelPendingRestore()
-    const nextIdx = queueIndex + 1
-    if (nextIdx >= queue.length) return
-    const next = queue[nextIdx]
-    setQueueIndex(nextIdx)
+    const activeQueue = isShuffle ? shuffledQueue : queue
+    const activeIdx = isShuffle ? shuffledQueueIndex : queueIndex
+    const nextIdx = activeIdx + 1
+    if (nextIdx >= activeQueue.length) return
+    const next = activeQueue[nextIdx]
+
+    if (isShuffle) {
+      setShuffledQueueIndex(nextIdx)
+      const origIdx = queue.findIndex((t) => t._id === next._id)
+      setQueueIndex(origIdx)
+    } else {
+      setQueueIndex(nextIdx)
+    }
+
     const audio = audioRef.current
     setCurrentTrack(next)
     setAudioError(null)
@@ -255,7 +328,7 @@ export function PlayerProvider({ children }) {
     audio.play()
       .then(() => setIsPlaying(true))
       .catch(() => setIsPlaying(false))
-  }, [queue, queueIndex, cancelPendingRestore])
+  }, [queue, queueIndex, isShuffle, shuffledQueue, shuffledQueueIndex, cancelPendingRestore])
 
   const playPrev = useCallback(() => {
     cancelPendingRestore()
@@ -265,10 +338,20 @@ export function PlayerProvider({ children }) {
       seek(0)
       return
     }
-    const prevIdx = queueIndex - 1
+    const activeQueue = isShuffle ? shuffledQueue : queue
+    const activeIdx = isShuffle ? shuffledQueueIndex : queueIndex
+    const prevIdx = activeIdx - 1
     if (prevIdx < 0) return
-    const prev = queue[prevIdx]
-    setQueueIndex(prevIdx)
+    const prev = activeQueue[prevIdx]
+
+    if (isShuffle) {
+      setShuffledQueueIndex(prevIdx)
+      const origIdx = queue.findIndex((t) => t._id === prev._id)
+      setQueueIndex(origIdx)
+    } else {
+      setQueueIndex(prevIdx)
+    }
+
     setCurrentTrack(prev)
     setAudioError(null)
     setCurrentTime(0)
@@ -279,7 +362,7 @@ export function PlayerProvider({ children }) {
     audio.play()
       .then(() => setIsPlaying(true))
       .catch(() => setIsPlaying(false))
-  }, [queue, queueIndex, seek, cancelPendingRestore])
+  }, [queue, queueIndex, isShuffle, shuffledQueue, shuffledQueueIndex, seek, cancelPendingRestore])
 
   const stopTrack = useCallback(() => {
     cancelPendingRestore()
@@ -292,8 +375,10 @@ export function PlayerProvider({ children }) {
     setDuration(0)
     setQueue([])
     setQueueIndex(-1)
+    setShuffledQueue([])
+    setShuffledQueueIndex(-1)
     setAudioError(null)
-  }, [])
+  }, [cancelPendingRestore])
 
   return (
     <PlayerContext.Provider value={{
@@ -310,9 +395,15 @@ export function PlayerProvider({ children }) {
       setVolume,
       playNext,
       playPrev,
-      hasNext: queue.length > 0 && queueIndex < queue.length - 1,
-      hasPrev: queue.length > 0 && queueIndex > 0,
+      hasNext: isShuffle
+        ? (shuffledQueue.length > 0 && shuffledQueueIndex < shuffledQueue.length - 1)
+        : (queue.length > 0 && queueIndex < queue.length - 1),
+      hasPrev: isShuffle
+        ? (shuffledQueue.length > 0 && shuffledQueueIndex > 0)
+        : (queue.length > 0 && queueIndex > 0),
       stopTrack,
+      isShuffle,
+      toggleShuffle,
     }}>
       {children}
     </PlayerContext.Provider>
