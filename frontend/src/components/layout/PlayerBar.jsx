@@ -28,6 +28,8 @@ export default function PlayerBar() {
     playPrev,
     hasNext,
     hasPrev,
+    isShuffle,
+    toggleShuffle,
   } = usePlayer()
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
@@ -164,6 +166,30 @@ export default function PlayerBar() {
 
             {/* Controls */}
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={toggleShuffle}
+                disabled={!currentTrack}
+                className="w-8 h-8 flex flex-col items-center justify-center rounded-full transition-all hover:opacity-80 active:scale-95 disabled:opacity-25 relative"
+                style={{
+                  color: isShuffle ? "var(--amber)" : "var(--charcoal-muted)",
+                }}
+                aria-label={isShuffle ? "Disable Shuffle" : "Enable Shuffle"}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+                {isShuffle && (
+                  <span
+                    className="absolute bottom-0.5 w-1 h-1 rounded-full"
+                    style={{ backgroundColor: "var(--amber)" }}
+                  />
+                )}
+              </button>
+
               <button
                 onClick={playPrev}
                 disabled={!hasPrev && !currentTrack}
