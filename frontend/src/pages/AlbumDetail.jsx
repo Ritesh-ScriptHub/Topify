@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { getAlbumById } from "@/api/music.api"
+import { useAuth } from "@/hooks/useAuth"
 import MusicCard from "@/components/shared/MusicCard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ function getGradient(str = "") {
 export default function AlbumDetail() {
   const { albumId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [album, setAlbum] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -114,7 +116,7 @@ export default function AlbumDetail() {
         </div>
 
         {/* Meta */}
-        <div>
+        <div className="flex-1 min-w-0">
           <p
             className="text-xs font-medium uppercase tracking-widest mb-2"
             style={{ color: "var(--charcoal-muted)" }}
@@ -122,7 +124,7 @@ export default function AlbumDetail() {
             Album
           </p>
           <h1
-            className="font-display text-4xl font-semibold leading-tight mb-2"
+            className="font-display text-4xl font-semibold leading-tight mb-2 truncate"
             style={{ color: "var(--charcoal)" }}
           >
             {album.title}
@@ -132,6 +134,20 @@ export default function AlbumDetail() {
             {tracks.length === 1 ? "track" : "tracks"}
           </p>
         </div>
+
+        {user && (album.artist?._id === user.id || album.artist === user.id) && (
+          <Button
+            onClick={() => navigate(`/artist/create-album?albumId=${album._id}`)}
+            className="rounded-full px-6 text-sm shrink-0 hover:scale-[1.02] transition-transform cursor-pointer"
+            style={{
+              backgroundColor: "var(--charcoal)",
+              color: "var(--cream)",
+              fontFamily: "'Outfit', sans-serif",
+            }}
+          >
+            ✏️ Edit Album
+          </Button>
+        )}
       </div>
 
       {/* Track list */}

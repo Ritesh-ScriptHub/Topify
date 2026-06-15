@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { getAllMusics, createAlbum } from "@/api/music.api"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { getArtistProfile, createAlbum, updateAlbum } from "@/api/music.api"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,13 @@ function getGradient(str = "") {
 export default function CreateAlbum() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const queryAlbumId = searchParams.get("albumId")
+
+  const [isEditMode, setIsEditMode] = useState(!!queryAlbumId)
+  const [myAlbums, setMyAlbums] = useState([])
+  const [selectedAlbumId, setSelectedAlbumId] = useState(queryAlbumId || "")
+  const [trackAlbumMap, setTrackAlbumMap] = useState({}) // trackId -> { id: albumId, title: albumTitle }
 
   const [title, setTitle] = useState("")
   const [tracks, setTracks] = useState([])
@@ -25,21 +32,99 @@ export default function CreateAlbum() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    async function loadTracks() {
+    async function loadData() {
       try {
-        const data = await getAllMusics(1, 50)
-        const myTracks = (data.musics || []).filter(
-          (t) => t.artist?._id === user.id || t.artist === user.id
-        )
-        setTracks(myTracks)
+        setTracksLoading(true)
+        const data = await getArtistProfile(user.username)
+        const artistTracks = data.tracks || []
+        const artistAlbums = data.albums || []
+
+        setTracks(artistTracks)
+        setMyAlbums(artistAlbums)
+
+        // Build a map of track ID to album details
+        const map = {}
+        for (const alb of artistAlbums) {
+          if (alb.musics) {
+            for (const musicId of alb.musics) {
+              const id = typeof musicId === "object" && musicId._id ? musicId._id : musicId
+              map[id] = { id: alb._id, title: alb.title }
+            }
+          }
+        }
+        setTrackAlbumMap(map)
+
+        // If there was an albumId query param, auto-select it
+        if (queryAlbumId) {
+          const alb = artistAlbums.find((a) => a._id === queryAlbumId)
+          if (alb) {
+            setIsEditMode(true)
+            setSelectedAlbumId(queryAlbumId)
+            setTitle(alb.title)
+            // musics is usually populated or an array of objects / IDs
+            const trackIds = (alb.musics || []).map(m => typeof m === "object" && m._id ? m._id : m)
+            setSelectedIds(trackIds)
+          }
+        }
       } catch (err) {
-        console.error(err)
+        console.error("Failed to load tracks and albums: ", err)
+        setError("Could not load your artist catalogue. Please try again.")
       } finally {
         setTracksLoading(false)
       }
     }
-    loadTracks()
-  }, [user.id])
+    if (user?.username) {
+      loadData()
+    }
+  }, [user.username, queryAlbumId])
+
+  const handleAlbumSelect = (albumId) => {
+    setSelectedAlbumId(albumId)
+    setError(null)
+    if (!albumId) {
+      setTitle("")
+      setSelectedIds([])
+      setSearchParams({})
+      return
+    }
+
+    const alb = myAlbums.find((a) => a._id === albumId)
+    if (alb) {
+      setTitle(alb.title)
+      const trackIds = (alb.musics || []).map(m => typeof m === "object" && m._id ? m._id : m)
+      setSelectedIds(trackIds)
+      setSearchParams({ albumId })
+    }
+  }
+
+  const handleModeChange = (edit) => {
+    setIsEditMode(edit)
+    setError(null)
+    setSuccess(false)
+    if (edit) {
+      // Switch to edit mode: if queryAlbumId is valid, keep it; else select empty
+      if (queryAlbumId) {
+        const alb = myAlbums.find((a) => a._id === queryAlbumId)
+        if (alb) {
+          setSelectedAlbumId(queryAlbumId)
+          setTitle(alb.title)
+          const trackIds = (alb.musics || []).map(m => typeof m === "object" && m._id ? m._id : m)
+          setSelectedIds(trackIds)
+          return
+        }
+      }
+      setSelectedAlbumId("")
+      setTitle("")
+      setSelectedIds([])
+      setSearchParams({})
+    } else {
+      // Switch to create mode
+      setSelectedAlbumId("")
+      setTitle("")
+      setSelectedIds([])
+      setSearchParams({})
+    }
+  }
 
   const toggleTrack = (id) => {
     setSelectedIds((prev) =>
@@ -51,12 +136,17 @@ export default function CreateAlbum() {
     e.preventDefault()
     setError(null)
 
+    if (isEditMode && !selectedAlbumId) { setError("Please select an album to edit."); return }
     if (!title.trim()) { setError("Please enter an album title."); return }
     if (selectedIds.length === 0) { setError("Select at least one track for the album."); return }
 
     setLoading(true)
     try {
-      await createAlbum({ title: title.trim(), musicIds: selectedIds })
+      if (isEditMode) {
+        await updateAlbum(selectedAlbumId, { title: title.trim(), musicIds: selectedIds })
+      } else {
+        await createAlbum({ title: title.trim(), musicIds: selectedIds })
+      }
       setSuccess(true)
     } catch (err) {
       setError(err.message)
@@ -76,13 +166,13 @@ export default function CreateAlbum() {
           className="w-20 h-20 rounded-full flex items-center justify-center text-4xl mx-auto mb-6"
           style={{ backgroundColor: "var(--amber-pale)" }}
         >
-          📀
+          {isEditMode ? "✏️" : "📀"}
         </div>
         <h2
           className="font-display text-3xl font-semibold mb-3"
           style={{ color: "var(--charcoal)" }}
         >
-          Album created!
+          {isEditMode ? "Album updated!" : "Album created!"}
         </h2>
         <p className="text-sm mb-8" style={{ color: "var(--charcoal-muted)" }}>
           <span className="font-medium" style={{ color: "var(--charcoal)" }}>"{title}"</span>{" "}
@@ -90,12 +180,20 @@ export default function CreateAlbum() {
         </p>
         <div className="flex gap-3 justify-center">
           <Button
-            onClick={() => { setSuccess(false); setTitle(""); setSelectedIds([]) }}
+            onClick={() => {
+              setSuccess(false)
+              if (!isEditMode) {
+                setTitle("")
+                setSelectedIds([])
+              } else {
+                navigate("/artist")
+              }
+            }}
             variant="outline"
             className="rounded-full px-6"
             style={{ borderColor: "var(--border)", color: "var(--charcoal)" }}
           >
-            Create another
+            {isEditMode ? "Back to Dashboard" : "Create another"}
           </Button>
           <Button
             onClick={() => navigate("/artist")}
@@ -109,14 +207,13 @@ export default function CreateAlbum() {
     )
   }
 
-  // ── Create form ──
   return (
     <div
       className="max-w-lg mx-auto"
       style={{ padding: "2.5rem 1.5rem" }}
     >
       {/* Header */}
-      <div className="anim-fade-up anim-delay-1 mb-8">
+      <div className="anim-fade-up anim-delay-1 mb-6">
         <button
           onClick={() => navigate("/artist")}
           className="flex items-center gap-2 text-sm mb-6 hover:opacity-70 transition-opacity"
@@ -131,16 +228,75 @@ export default function CreateAlbum() {
           className="font-display text-4xl font-semibold mb-2"
           style={{ color: "var(--charcoal)" }}
         >
-          Create an Album
+          Manage Albums
         </h1>
         <p className="text-sm" style={{ color: "var(--charcoal-muted)" }}>
-          Group your tracks into a full listening experience.
+          Organize and publish track collections.
         </p>
+      </div>
+
+      {/* Mode Switcher */}
+      <div className="anim-fade-up anim-delay-1 flex p-1 rounded-2xl mb-6" style={{ backgroundColor: "var(--cream-dark)", border: "1px solid var(--border)" }}>
+        <button
+          type="button"
+          onClick={() => handleModeChange(false)}
+          className="flex-1 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer"
+          style={{
+            backgroundColor: !isEditMode ? "var(--surface)" : "transparent",
+            color: "var(--charcoal)",
+            boxShadow: !isEditMode ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+          }}
+        >
+          📀 Create Album
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeChange(true)}
+          className="flex-1 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer"
+          style={{
+            backgroundColor: isEditMode ? "var(--surface)" : "transparent",
+            color: "var(--charcoal)",
+            boxShadow: isEditMode ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
+          }}
+        >
+          ✏️ Edit Album
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="anim-fade-up anim-delay-2 space-y-6">
 
-        {/* Album title */}
+        {/* Album Selector (Edit mode only) */}
+        {isEditMode && (
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="albumSelect"
+              className="text-sm font-medium"
+              style={{ color: "var(--charcoal)" }}
+            >
+              Select Album
+            </Label>
+            <select
+              id="albumSelect"
+              value={selectedAlbumId}
+              onChange={(e) => handleAlbumSelect(e.target.value)}
+              className="w-full px-3 h-11 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-[var(--amber)] cursor-pointer"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--charcoal)",
+              }}
+            >
+              <option value="">-- Choose an Album --</option>
+              {myAlbums.map((album) => (
+                <option key={album._id} value={album._id}>
+                  {album.title} ({album.musics?.length || 0} {album.musics?.length === 1 ? "track" : "tracks"})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Album Title */}
         <div className="space-y-1.5">
           <Label
             htmlFor="albumTitle"
@@ -214,16 +370,22 @@ export default function CreateAlbum() {
 
             {/* Track rows */}
             {!tracksLoading && tracks.map((track, i) => {
+              const albumInfo = trackAlbumMap[track._id]
+              const isInOtherAlbum = albumInfo && (!isEditMode || albumInfo.id !== selectedAlbumId)
               const selected = selectedIds.includes(track._id)
+
               return (
                 <div
                   key={track._id}
                   role="checkbox"
                   aria-checked={selected}
-                  tabIndex={0}
-                  onClick={() => toggleTrack(track._id)}
-                  onKeyDown={(e) => e.key === " " && toggleTrack(track._id)}
-                  className="flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors"
+                  aria-disabled={isInOtherAlbum}
+                  tabIndex={isInOtherAlbum ? -1 : 0}
+                  onClick={() => !isInOtherAlbum && toggleTrack(track._id)}
+                  onKeyDown={(e) => e.key === " " && !isInOtherAlbum && toggleTrack(track._id)}
+                  className={`flex items-center gap-4 px-4 py-3 transition-colors ${
+                    isInOtherAlbum ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+                  }`}
                   style={{
                     borderBottom: i < tracks.length - 1 ? "1px solid var(--border)" : "none",
                     backgroundColor: selected ? "var(--amber-pale)" : "transparent",
@@ -252,13 +414,21 @@ export default function CreateAlbum() {
                     🎵
                   </div>
 
-                  {/* Title */}
-                  <p
-                    className="text-sm font-medium flex-1 min-w-0 truncate"
-                    style={{ color: selected ? "var(--amber)" : "var(--charcoal)" }}
-                  >
-                    {track.title}
-                  </p>
+                  {/* Title & Info */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-sm font-medium truncate"
+                      style={{ color: selected ? "var(--amber)" : "var(--charcoal)" }}
+                    >
+                      {track.title}
+                    </p>
+                    {isInOtherAlbum && (
+                      <p className="text-xs font-semibold flex items-center gap-1 mt-0.5" style={{ color: "var(--charcoal-muted)" }}>
+                        <span>📀 In album:</span>
+                        <span className="underline truncate max-w-[150px]">{albumInfo.title}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -287,14 +457,14 @@ export default function CreateAlbum() {
           style={{ backgroundColor: "var(--amber)", color: "#fff" }}
         >
           {loading ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 justify-center">
               <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
               </svg>
-              Creating…
+              {isEditMode ? "Saving…" : "Creating…"}
             </span>
           ) : (
-            `Create Album${selectedIds.length > 0 ? ` · ${selectedIds.length} track${selectedIds.length > 1 ? "s" : ""}` : ""}`
+            `${isEditMode ? "Update Album" : "Create Album"}${selectedIds.length > 0 ? ` · ${selectedIds.length} track${selectedIds.length > 1 ? "s" : ""}` : ""}`
           )}
         </Button>
       </form>

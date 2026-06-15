@@ -55,6 +55,16 @@ async function createAlbum(req, res) {
             })
         }
 
+        // Validate that tracks are not already in any existing album
+        const duplicateTrack = await albumModel.findOne({
+            musics: { $in: musicIds }
+        });
+        if (duplicateTrack) {
+            return res.status(400).json({
+                message: `One or more tracks are already in another album: "${duplicateTrack.title}".`
+            });
+        }
+
         const album = await albumModel.create({
             title,
             musics: musicIds,
@@ -75,6 +85,70 @@ async function createAlbum(req, res) {
         res.status(500).json({ message: "Internal Server Error ", error: err.message})
     }
 }
+
+async function updateAlbum(req, res) {
+    try {
+        const { albumId } = req.params;
+        const { title, musicIds } = req.body;
+
+        if (!title || !musicIds || musicIds.length === 0) {
+            return res.status(400).json({ message: "Title and at least one track are required." })
+        }
+
+        const album = await albumModel.findById(albumId);
+        if (!album) {
+            return res.status(404).json({ message: "Album not found." });
+        }
+
+        if (album.artist.toString() !== req.user.id) {
+            return res.status(403).json({ message: "You are not authorized to update this album." });
+        }
+
+        const tracks = await musicModel.find({
+            _id: { $in: musicIds },
+        }).select("artist");
+        if (tracks.length !== musicIds.length) {
+            return res.status(400).json({ message: "One or more track IDs are invalid." })
+        }
+        const unauthorised = tracks.some(
+            (t) => t.artist.toString() !== req.user.id
+        )
+        if (unauthorised) {
+            return res.status(403).json({
+                message: "You can only add your own tracks to an album.",
+            })
+        }
+
+        // Validate that tracks are not already in another album
+        const duplicateTrack = await albumModel.findOne({
+            _id: { $ne: albumId },
+            musics: { $in: musicIds }
+        });
+        if (duplicateTrack) {
+            return res.status(400).json({
+                message: `One or more tracks are already in another album: "${duplicateTrack.title}".`
+            });
+        }
+
+        album.title = title;
+        album.musics = musicIds;
+        await album.save();
+
+        res.status(200).json({
+            message: "Album updated successfully.",
+            album: {
+                id: album._id,
+                title: album.title,
+                artist: album.artist,
+                musics: album.musics
+            }
+        })
+    } catch (err) {
+        console.error("updateAlbum error: ", err);
+        res.status(500).json({ message: "Internal Server Error ", error: err.message})
+    }
+}
+
 
 async function getAllMusics(req, res){
 
@@ -211,4 +285,4 @@ async function searchAll(req, res){
     }
 }
 
-module.exports = { createMusic, createAlbum, getAllMusics, getAllAlbums, getAlbumById, getArtistProfile, searchAll }
+module.exports = { createMusic, createAlbum, updateAlbum, getAllMusics, getAllAlbums, getAlbumById, getArtistProfile, searchAll }
