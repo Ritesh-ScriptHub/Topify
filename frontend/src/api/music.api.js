@@ -24,5 +24,11 @@ export const createAlbum = (body) =>
     body: JSON.stringify(body),
   })
 
+export const updateAlbum = (albumId, body) =>
+  request(`/music/albums/${albumId}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+
 export const searchAll = (q) =>
   request(`/music/search?q=${encodeURIComponent(q)}`)

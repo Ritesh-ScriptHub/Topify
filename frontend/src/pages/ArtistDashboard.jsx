@@ -238,6 +238,110 @@ export default function ArtistDashboard() {
           </div>
         )}
       </section>
+
+      {/* Recent albums */}
+      <section className="anim-fade-up anim-delay-5 mt-12">
+        <h2
+          className="font-display text-xl font-medium mb-5"
+          style={{ color: "var(--charcoal)" }}
+        >
+          Your Albums
+        </h2>
+
+        {loading ? (
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 px-4 py-3"
+                style={{ borderBottom: i < 1 ? "1px solid var(--border)" : "none" }}
+              >
+                <Skeleton className="w-7 h-4 rounded" style={{ backgroundColor: "var(--cream-dark)" }} />
+                <Skeleton className="w-9 h-9 rounded-lg" style={{ backgroundColor: "var(--cream-dark)" }} />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3.5 w-1/3 rounded" style={{ backgroundColor: "var(--cream-dark)" }} />
+                  <Skeleton className="h-3 w-1/5 rounded" style={{ backgroundColor: "var(--cream-dark)" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : albums.length === 0 ? (
+          <div
+            className="rounded-2xl px-6 py-14 text-center"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            <p className="text-3xl mb-3">📀</p>
+            <p className="text-sm font-medium mb-1" style={{ color: "var(--charcoal)" }}>
+              No albums yet
+            </p>
+            <p className="text-xs" style={{ color: "var(--charcoal-muted)" }}>
+              Create your first album to bundle your tracks.
+            </p>
+          </div>
+        ) : (
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            {albums.map((album, i) => (
+              <div
+                key={album._id}
+                className="flex items-center gap-4 px-4 py-3"
+                style={{
+                  borderBottom: i < albums.length - 1 ? "1px solid var(--border)" : "none",
+                }}
+              >
+                {/* Index */}
+                <span
+                  className="w-7 text-center text-sm shrink-0"
+                  style={{ color: "var(--charcoal-muted)" }}
+                >
+                  {i + 1}
+                </span>
+
+                {/* Color dot */}
+                <div
+                  className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-sm"
+                  style={{
+                    background: `linear-gradient(135deg, hsl(${(album.title.charCodeAt(0) * 7) % 360},55%,70%), hsl(${(album.title.charCodeAt(0) * 7 + 40) % 360},45%,60%))`,
+                  }}
+                >
+                  📀
+                </div>
+
+                {/* Title */}
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-medium truncate"
+                    style={{ color: "var(--charcoal)" }}
+                  >
+                    {album.title}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--charcoal-muted)" }}>
+                    {album.musics?.length || 0} {album.musics?.length === 1 ? "track" : "tracks"}
+                  </p>
+                </div>
+
+                {/* Edit Button */}
+                <Link
+                  to={`/artist/create-album?albumId=${album._id}`}
+                  className="shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition-all hover:scale-[1.02] flex items-center gap-1.5"
+                  style={{
+                    backgroundColor: "var(--cream-dark)",
+                    border: "1px solid var(--border)",
+                    color: "var(--charcoal)",
+                  }}
+                >
+                  ✏️ Edit
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
